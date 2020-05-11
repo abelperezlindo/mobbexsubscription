@@ -1,0 +1,134 @@
+<?php
+/**Archivos que se cargan al momento de cargar el modulo*/
+
+module_load_include('inc', 'mobbexsubscription', 'includes/set_config.inc');
+module_load_include('inc', 'mobbexsubscription', 'includes/webhook.inc');
+module_load_include('inc', 'mobbexsubscription', 'includes/test.inc');
+module_load_include('inc', 'mobbexsubscription', 'includes/subscriber_page.inc');
+
+
+
+/**
+* @method implementa hook_init e inicializa el modulo
+*/
+function mobbexsubscription_init(){
+
+}
+
+function mobbexsubscription_permission(){
+    return [
+        'acceso_configurar_mobbexsubscription' =>  array(
+          'title' => t('Mobbex Subscription - Configuracion'),
+          'description' => t('Permisos para acceder a configuraciones de Mobbex Subscription .'),
+        ),
+        'acceso_mi_suscripcion_mobbexsubscription' =>  array(
+          'title' => t('Mobbex Subscription - Mi Suscripción'),
+          'description' => t('Permisos para acceder a Mi Suscripción .'),
+      )
+    ];
+  }
+  
+  /**
+  * @method implementa hook_help y muestra la ayuda de configuración y uso del modulo
+  */
+  function mobbexsubscription_help($path, $arg){
+    switch ($path) {
+      case 'mobbexsubscription/manage':
+        // Help text for the simple page registered for this path.
+        return t('This section displays the list of Pages.');
+    }
+  }
+  
+  /**
+  * @method implementa hook_menu y define los items de menu del modulo
+  */
+  
+  function mobbexsubscription_menu()
+  {
+      $items = array();
+  
+      /*------ ITEMS DE MENU PARA MODULO -------*/
+      $items['admin/config/mobbexsubscription'] = [
+        'title' => 'Mobbex Subscription - Configuración',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('mobbexsubscription_config_form'),
+        'access arguments' => array('acceso_configurar_mobbexsubscription'),
+        'file' => 'includes/set_config.inc',
+        'expanded' => TRUE,
+      ];
+      $items['mi-suscripcion'] = [
+        'title' => 'Mi Suscripción',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('subscriber_page_form'),
+        'access arguments' => array('acceso_mi_suscripcion_mobbexsubscription'),
+        'file' => 'includes/subscriber_page.inc',
+        'expanded' => TRUE,
+      ];
+      $items['mobbex/webhook'] = [
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('webhook_form'),
+        'file' => 'includes/webhook.inc',
+        'expanded' => TRUE,
+      ];
+      $items['admin/subscripciones/test'] = [
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('test_form'),
+        'file' => 'includes/test.inc',
+        'expanded' => TRUE,
+      ];
+      $items['admin/config/mobbexsubscription/manage'] = [
+        'title'            => 'First item',
+        'description'      => 'This is the first child item in the section',
+        'page callback'    => 'mobbexsubscription_config_form',
+        'access arguments' => ['acceso_configurar_mobbexsubscription'],
+      ];
+    return $items;
+  }
+  
+/**
+ *  Implementa hook_block_info()
+ */
+function mobbexsubscription_block_info() {
+
+  $blocks['boton_de_suscripcion'] = [
+    // info: The name of the block.
+    'info' => t('Mobbex Subscription: Botón Suscribirme'),
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  ];
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * This hook generates the contents of the blocks themselves.
+ */
+function mobbexsubscription_block_view($delta = '') {
+  // The $delta parameter tells us which block is being requested.
+  switch ($delta) {
+    case 'boton_de_suscripcion':
+      $block['subject'] = t('Suscribirse');
+      $block['content'] = mobbexsubscription_contents($delta);
+      break;
+  }
+  return $block;
+}
+
+/**
+ * A module-defined block content function.
+ */
+function mobbexsubscription_contents($which_block) {
+  switch ($which_block) {
+    case 'boton_de_suscripcion':
+      $url = variable_get('mobbexsubscription_shorten_url', 0);
+      $msg = '';
+      if(!empty($url)){
+        $msg = '<a href="'.$url.'"> Suscribirse </a>';
+      }
+      $result = [
+        '#markup' => $msg,
+      ];
+      return $result;
+  }
+}

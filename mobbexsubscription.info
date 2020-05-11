@@ -1,0 +1,6 @@
+name =  mobbexsubscription
+description = Botón de suscripción con Nobbex
+package = ideasOrange
+core = 7.x
+version = 7.x
+configure = admin/config/mobbexsubscription
