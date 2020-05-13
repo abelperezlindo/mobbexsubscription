@@ -5,6 +5,7 @@ module_load_include('inc', 'mobbexsubscription', 'includes/set_config.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/webhook.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/test.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/subscriber_page.inc');
+module_load_include('inc', 'mobbexsubscription', 'includes/create_subscription.inc');
 
 
 
@@ -24,7 +25,11 @@ function mobbexsubscription_permission(){
         'acceso_mi_suscripcion_mobbexsubscription' =>  array(
           'title' => t('Mobbex Subscription - Mi Suscripción'),
           'description' => t('Permisos para acceder a Mi Suscripción .'),
-      )
+        ),
+        'acceso_create_subscription_mobbexsubscription' =>  array(
+          'title' => t('Mobbex Subscription - Crear Suscripción'),
+          'description' => t('Permisos para acceder a Crear Suscripción .'),
+        )
     ];
   }
   
@@ -54,6 +59,14 @@ function mobbexsubscription_permission(){
         'page arguments' => array('mobbexsubscription_config_form'),
         'access arguments' => array('acceso_configurar_mobbexsubscription'),
         'file' => 'includes/set_config.inc',
+        'expanded' => TRUE,
+      ];
+      $items['admin/config/mobbexsubscription/nueva-suscripcion'] = [
+        'title' => 'Crear Suscripción',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('create_subscription_form'),
+        'access arguments' => array('acceso_create_subscription_mobbexsubscription'),
+        'file' => 'includes/create_subscription.inc',
         'expanded' => TRUE,
       ];
       $items['mi-suscripcion'] = [

@@ -209,7 +209,7 @@ function drawSubsList($result) {
         $tabla[$aux]['NAME']        = $valor['name'];
         $tabla[$aux]['DESCRIPTION'] = $valor['description'];
         $tabla[$aux]['INTERVAL']    = $valor['interval'];
-        $tabla[$aux]['COUNT']         = $valor['count'];
+        $tabla[$aux]['COUNT']       = $valor['count'];
         $tabla[$aux]['TOTAL']       = $valor['currency'].' $'.$valor['total'];
         $tabla[$aux]['URL']         = $valor['url'];
         $aux ++;        
