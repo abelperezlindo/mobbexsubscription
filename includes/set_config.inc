@@ -28,18 +28,7 @@ function mobbexsubscription_config_form($form, &$form_state){
         '#description' => t('Ingrese el Token de Acceso a la entidad para la cual desea realizar las operaciónes.'),
         '#default_value' => $config['token'],
     ];
-    if(isset($form_state['subsList'])){
-        $form['access_config']['List'] = array(
-            '#markup' => $form_state['subsList']
-          );
-    }
-    $form['access_config']['getSubList'] = array(
-        '#type' => 'submit',
-        '#name'   => 'getSubList',
-        '#value' => t('Listar suscripciones'),
-        '#validate' => ['getSubList_validate'],
-        '#submit' => ['getSubList_submit'],
-      );
+
     $form['subscription_config'] = [
         '#type' => 'fieldset',
         '#title' => t('Configuraciones Subscripción'),
@@ -51,6 +40,25 @@ function mobbexsubscription_config_form($form, &$form_state){
         '#description' => t('Ingrese el ID de la Subscripción '),
         '#default_value' => $config['idsub'],
     ];
+    if(isset($form_state['subsList'])){
+        $form['subscription_config']['List'] = array(
+            '#markup' => $form_state['subsList']
+          );
+    }
+    $form['subscription_config']['createSubscription'] = array(
+        '#markup'   => l(
+            t('Crear nueva suscripción'),
+            'admin/config/mobbexsubscription/nueva-suscripcion', 
+            ['attributes' => ['class' => 'createSubscription-link']]
+        ),
+      );
+    $form['subscription_config']['getSubList'] = array(
+        '#type'   => 'submit',
+        '#name'   => 'getSubList',
+        '#value'  => t('Listar suscripciones'),
+        '#validate' => ['getSubList_validate'],
+        '#submit' => ['getSubList_submit'],
+      );
     $form['users_config'] = [
         '#type' => 'fieldset',
         '#title' => t('Configuraciones para Usuarios'),

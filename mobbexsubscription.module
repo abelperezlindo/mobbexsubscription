@@ -1,10 +1,7 @@
 <?php
 
-//$path = '/home/dev/pear/share/pear';
-//set_include_path(get_include_path() . PATH_SEPARATOR . $path);
-//include 'HTTP/Request2.php';
 require __DIR__ . '/includes/vendor/autoload.php';
-/**Archivos que se cargan al momento de cargar el modulo*/
+
 
 module_load_include('inc', 'mobbexsubscription', 'includes/set_config.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/webhook.inc');
@@ -58,7 +55,7 @@ function mobbexsubscription_permission(){
   
       /*------ ITEMS DE MENU PARA MODULO -------*/
       $items['admin/config/mobbexsubscription/configurar'] = [
-        'title' => 'Mobbex Subscription - Configuración',
+        'title' => 'Configuración',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('mobbexsubscription_config_form'),
         'access arguments' => array('acceso_configurar_mobbexsubscription'),
@@ -94,8 +91,8 @@ function mobbexsubscription_permission(){
         'expanded' => TRUE,
       ];
       $items['admin/config/mobbexsubscription'] = [
-        'title'            => 'First item',
-        'description'      => 'This is the first child item in the section',
+        'title'            => 'Mobbex Subscriptions',
+        'description'      => 'Seccion',
         'page callback'    => 'mobbexsubscription_config_form',
         'access arguments' => ['acceso_configurar_mobbexsubscription'],
       ];
@@ -126,7 +123,8 @@ function mobbexsubscription_block_view($delta = '') {
   switch ($delta) {
     case 'boton_de_suscripcion':
       $block['subject'] = t('Suscribirse');
-      $block['content'] = mobbexsubscription_contents($delta);
+      //$block['content'] = mobbexsubscription_contents($delta);
+      $block['content'] = drupal_get_form('createNewSuscriptor_form');
       break;
   }
   return $block;
@@ -148,4 +146,104 @@ function mobbexsubscription_contents($which_block) {
       ];
       return $result;
   }
+}
+
+function createNewSuscriptor_form($form,  &$form_state){
+
+$form['dni'] = [
+  '#type'        => 'textfield',
+  '#title'       => t('DNI'),
+  '#description' => t('DNI'),
+  '#required'    => TRUE,
+];
+$form['nombre'] = [
+  '#type'        => 'textfield',
+  '#title'       => t('Nombre'),
+  '#description' => t('nombre'),
+  '#required'    => TRUE,
+];
+$form['correo'] = [
+  '#type'        => 'textfield',
+  '#title'       => t('correo'),
+  '#description' => t('correo'),
+  '#required'    => TRUE,
+];
+$form['confirm'] = [
+    '#type'     => 'submit',
+    '#name'     => 'confirmNewSubscription',
+    '#value'    => t('Confirmar'),
+    '#validate' => ['createNewSuscriptor_validate'],
+    '#submit'   => ['createNewSuscriptor_submit'],
+];
+
+return $form;
+}
+function createNewSuscriptor_validate($form,  &$form_state){}
+function createNewSuscriptor_submit($form,  &$form_state){
+
+  $uid = $GLOBALS['user']->uid;
+  $apikey       = variable_get('mobbexsubscription_apikey', 0);
+  $token        = variable_get('mobbexsubscription_token', 0);
+  $subscription = variable_get('mobbexsubscription_idsubs', 0);
+
+  if(!$apikey || !$token) return;
+
+  $request = new HTTP_Request2();
+  $request->setUrl('https://api.mobbex.com/p/subscriptions/' .$subscription. '/subscriber');
+  $request->setMethod(HTTP_Request2::METHOD_POST);
+  $request->setConfig(array(
+    'follow_redirects' => TRUE
+  ));
+  $request->setHeader(array(
+    'x-api-key'      => $apikey,
+    'x-access-token' => $token,
+    'Content-Type'   => 'application/json',
+    'Content-Type'   => 'application/json'
+  ));
+
+  $data = [
+    'customer' => [
+        'identification'   => $form_state['values']['dni'],
+        'email'            => $form_state['values']['correo'],
+        'name'             => $form_state['values']['nombre'],
+        'custom_id_drupal' => $uid
+    ],
+    'startDate' => [
+        'day' => date('j'),
+        'month' => date('n'),
+    ],
+  ];
+
+  $json = json_encode($data);
+
+
+  $request->setBody($json);
+  try {
+    $response = $request->send();
+    if ($response->getStatus() == 200) {
+      //echo $response->getBody();
+      $body = json_decode($response->getBody(), TRUE);
+      if($body['result'] == 'true'){
+        $suscriber = $body['data']['uid'];
+        drupal_set_message( 'Se creó un nuevo suscriptor '.$suscriber);
+        associateSuscriptionWithUser($body['data']);
+        drupal_goto($body['data']['subscriberUrl'], array('external' => TRUE));
+      }
+      else 
+          drupal_set_massage('Ocurrio un error', 'ERROR');
+    }
+    else {
+      $message = 'Unexpected HTTP status: ' . $response->getStatus() . ' ' .$response->getReasonPhrase();
+      watchdog('mebbexsubscription', $message, array(), WATCHDOG_ERROR);
+      drupal_set_message($message);
+    }
+  }
+  catch(HTTP_Request2_Exception $e) {
+    $message = 'Error: ' . $e->getMessage();
+    watchdog('mebbexsubscription', $message, array(), WATCHDOG_ERROR);
+    drupal_set_message($message);
+  }
+}
+
+function associateSuscriptionWithUser($data = array()){
 }

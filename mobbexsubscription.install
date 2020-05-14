@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the Organic groups module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function mobbexsubscription_install() {
+  // Add "User request" to the default group membership type.
+  $field_name = MOBBEX_SUSCRIBER_UID_FIELD;
+  if (!field_info_field($field_name)) {
+    $field = array(
+      'field_name' => $field_name,
+      'type' => 'text',
+      'entity_types' => array('mobbex_subscription'),
+      'cardinality' => 1,
+      // Although we would prefer to not allow deleting this field, we can not
+      // lock it, as it will not allow adding it to other bundles.
+      'locked' => FALSE,
+    );
+    $field = field_create_field($field);
+  }
+
+  if (!field_info_instance('mobbex_subscription', $field_name, MOBBEX_DEFAULT)) {
+    $instance = array(
+      'field_name' => $field_name,
+      'bundle' => MOBBEX_DEFAULT,
+      'entity_type' => 'mobbex_subscription',
+      'label' => t('ID DE SUSCRIPTOR'),
+      'required' => FALSE,
+    );
+    field_create_instance($instance);
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function mobbexsubscription_uninstall() {
+
+  $vars = array(
+    'mobbexsubscription_apikey',
+    'mobbexsubscription_token',
+    'mobbexsubscription_idsubs',
+    'mobbexsubscription_activerole',
+  );
+
+  foreach ($vars as $var) {
+    variable_del($var);
+  }
+}
