@@ -1,7 +1,7 @@
 <?php
 
 function create_subscription_form($form, &$form_state){
-
+    
     $form['name'] = [
         '#type' => 'textfield',
         '#title' => t('Nombre'),
@@ -76,6 +76,7 @@ function create_subscription_form($form, &$form_state){
         '#validate' => ['confirmNewSubscription_validate'],
         '#submit' => ['confirmNewSubscription_submit'],
     ];
+
     return $form;
 }
 function confirmNewSubscription_validate($form, &$form_state){
@@ -114,49 +115,58 @@ function confirmNewSubscription_validate($form, &$form_state){
 }
 function confirmNewSubscription_submit($form, &$form_state){
 
+    
     $apikey = variable_get('mobbexsubscription_apikey', 0);
-    $token  = variable_get('mobbexsubscription_apikey', 0);
+    $token  = variable_get('mobbexsubscription_token', 0);
 
 
     if(!$apikey || !$token) return;
 
-    $urlBase = 'https://api.mobbex.com/p/subscriptions';
-    $data = [
-            'name'          => $form_state['values']['name'],
-            'description'   => $form_state['values']['description'],
-            'type'          => $form_state['values']['type'],
-            'interval'      => $form_state['values']['interval'],
-            'trial'         => $form_state['values']['trial'],
-            'limit'         => $form_state['values']['limit'],
-            'total'         => $form_state['values']['total'],
-            'currency'      => 'ARS',
-            'webhook'       => $form_state['values']['webhook'],
-            'return_url'    => $form_state['values']['return_url'],
-            
-    ];
-    $query = drupal_http_build_query($data);
-    //$query = urlencode($query);
-    //$query = json_encode($data);
-    $options = array(
-        'method' => 'POST',
-        'data' => $query,
-        'headers' => [
-            'x-api-key'      => $apikey,
-            'x-access-token' => $token,
-            'Content-Type'   => 'application/json',
-            'charset'        => 'utf-8'
-        ],
-    );
-    $response = drupal_http_request($urlBase, $options);
+    $request = new HTTP_Request2();
+    $request->setUrl('https://api.mobbex.com/p/subscriptions');
+    $request->setMethod(HTTP_Request2::METHOD_POST);
+    $request->setConfig(['follow_redirects' => TRUE]);
 
-    if (($response->code == 200) && ($response->status_message == 'OK')){
-        
-        $result =  json_decode($response->data, TRUE);
-        //drupal_set_message('<pre>'.print_r($data, TRUE).'</pre>');
-        
-        drupal_set_message('<pre>'.print_r($result, TRUE).'</pre>');
+    $header = [
+        'x-api-key'      => $apikey,
+        'x-access-token' => $token ,
+        'Content-Type'   => 'application/json',
+        'Content-Type'   => 'application/x-www-form-urlencoded'
+    ];
+    $data = [
+        'name'          => $form_state['values']['name'],
+        'description'   => $form_state['values']['description'],
+        'type'          => $form_state['values']['type'],
+        'interval'      => $form_state['values']['interval'],
+        'trial'         => $form_state['values']['trial'],
+        'limit'         => $form_state['values']['limit'],
+        'total'         => $form_state['values']['total'],
+        'currency'      => $form_state['values']['total'],
+        'webhook'       => $form_state['values']['webhook'],
+        'return_url'    => $form_state['values']['return_url'],
+    ];
+    $request->setHeader($header);
+    $request->addPostParameter($data);
+
+    try {
+        $response = $request->send();
+        if ($response->getStatus() == 200) {
+            $body = json_decode($response->getBody(), TRUE);
+            if($body['result'] == 'true')
+                drupal_set_message( 'Se creó la suscripcion '.$body['data']['uid']);
+            else 
+                drupal_set_massage('Ocurrio un error', 'ERROR');
+        }
+        else {
+            $message = 'Unexpected HTTP status: ' . $response->getStatus() . ' ' .$response->getReasonPhrase();
+            watchdog('mebbexsubscription', $message, array(), WATCHDOG_ERROR);
+            drupal_set_message($message);
+        }
     }
-    drupal_set_message('<pre>'.print_r($data, TRUE).'</pre>');
-    drupal_set_message('<pre>'.print_r($response, TRUE).'</pre>');
+    catch(HTTP_Request2_Exception $e) {
+        $message = 'Error: ' . $e->getMessage();
+        watchdog('mebbexsubscription', $message, array(), WATCHDOG_ERROR);
+        drupal_set_message($message);
+    }  
     
 }

@@ -1,4 +1,9 @@
 <?php
+
+//$path = '/home/dev/pear/share/pear';
+//set_include_path(get_include_path() . PATH_SEPARATOR . $path);
+//include 'HTTP/Request2.php';
+require __DIR__ . '/includes/vendor/autoload.php';
 /**Archivos que se cargan al momento de cargar el modulo*/
 
 module_load_include('inc', 'mobbexsubscription', 'includes/set_config.inc');
@@ -6,7 +11,6 @@ module_load_include('inc', 'mobbexsubscription', 'includes/webhook.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/test.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/subscriber_page.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/create_subscription.inc');
-
 
 
 /**
@@ -53,7 +57,7 @@ function mobbexsubscription_permission(){
       $items = array();
   
       /*------ ITEMS DE MENU PARA MODULO -------*/
-      $items['admin/config/mobbexsubscription'] = [
+      $items['admin/config/mobbexsubscription/configurar'] = [
         'title' => 'Mobbex Subscription - Configuración',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('mobbexsubscription_config_form'),
@@ -89,7 +93,7 @@ function mobbexsubscription_permission(){
         'file' => 'includes/test.inc',
         'expanded' => TRUE,
       ];
-      $items['admin/config/mobbexsubscription/manage'] = [
+      $items['admin/config/mobbexsubscription'] = [
         'title'            => 'First item',
         'description'      => 'This is the first child item in the section',
         'page callback'    => 'mobbexsubscription_config_form',
