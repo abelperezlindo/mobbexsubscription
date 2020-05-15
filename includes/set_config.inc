@@ -59,20 +59,7 @@ function mobbexsubscription_config_form($form, &$form_state){
         '#validate' => ['getSubList_validate'],
         '#submit' => ['getSubList_submit'],
       );
-    $form['users_config'] = [
-        '#type' => 'fieldset',
-        '#title' => t('Configuraciones para Usuarios'),
-        '#description' => t('Ingrese la información necesaria para configurar los usuarios'),
-        
-    ];  
-    $allRoles = user_roles(TRUE);
-    $form['users_config']['role_subscriber_active'] = [
-        '#type' => 'select',
-        '#options' => $allRoles,
-        '#title' => t('Rol para usuario suscrito'),
-        '#description' => t('Seleccione el rol que se le asignara a un nuevo subscriptor'),
-        '#default_value' => $config['activerole'],
-    ];
+
 
     $form['save'] = array(
         '#type' => 'submit',
@@ -160,10 +147,12 @@ function SaveConfig_submit($form, &$form_state){
         'mobbexsubscription_idsubs', 
         $form_state['values']['id_subscription']
     );
+ /*
     variable_set(
         'mobbexsubscription_activerole' , 
         $form_state['values']['role_subscriber_active']
     );
+ */
 
     $idSubscription = $form_state['values']['id_subscription'];
     $urlBase = 'https://api.mobbex.com/p/subscriptions/'.$idSubscription;
@@ -203,7 +192,6 @@ function getDataConfig(){
         'apikey'           => variable_get('mobbexsubscription_apikey', 0),
         'token'            => variable_get('mobbexsubscription_token', 0),
         'idsub'            => variable_get('mobbexsubscription_idsubs', 0),
-        'activerole'       => variable_get('mobbexsubscription_activerole', 0),
     ];
 }
 

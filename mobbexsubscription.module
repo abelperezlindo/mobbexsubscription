@@ -30,9 +30,14 @@ function mobbexsubscription_permission(){
         'acceso_create_subscription_mobbexsubscription' =>  array(
           'title' => t('Mobbex Subscription - Crear Suscripción'),
           'description' => t('Permisos para acceder a Crear Suscripción .'),
+        ),
+        'test_mobbexsubscription' =>  array(
+          'title' => t('Mobbex Subscription - TEST'),
+          'description' => t('Permisos para acceder a TEST .'),
         )
     ];
   }
+  //test_mobbexsubscription
   
   /**
   * @method implementa hook_help y muestra la ayuda de configuración y uso del modulo
@@ -87,6 +92,7 @@ function mobbexsubscription_permission(){
       $items['admin/subscripciones/test'] = [
         'page callback' => 'drupal_get_form',
         'page arguments' => array('test_form'),
+        'access arguments' => array('test_mobbexsubscription'),
         'file' => 'includes/test.inc',
         'expanded' => TRUE,
       ];
@@ -123,8 +129,14 @@ function mobbexsubscription_block_view($delta = '') {
   switch ($delta) {
     case 'boton_de_suscripcion':
       $block['subject'] = t('Suscribirse');
-      //$block['content'] = mobbexsubscription_contents($delta);
-      $block['content'] = drupal_get_form('createNewSuscriptor_form');
+      $user = $GLOBALS['user'];
+      $isActive = array_search('active_subscriptor', $user->roles);
+      $isInactive = array_search('inactive_subscriptor', $user->roles);
+      if($isActive || $isInactive){
+        $block['content'] = mobbexsubscription_contents($delta);
+      }else{
+        $block['content'] = drupal_get_form('createNewSuscriptor_form');
+      }
       break;
   }
   return $block;
@@ -136,13 +148,12 @@ function mobbexsubscription_block_view($delta = '') {
 function mobbexsubscription_contents($which_block) {
   switch ($which_block) {
     case 'boton_de_suscripcion':
-      $url = variable_get('mobbexsubscription_shorten_url', 0);
-      $msg = '';
-      if(!empty($url)){
-        $msg = '<a href="'.$url.'"> Suscribirse </a>';
-      }
+      $link = l(
+        'Mi Suscripción',
+        'mi-suscripcion'
+      );
       $result = [
-        '#markup' => $msg,
+        '#markup' => $link,
       ];
       return $result;
   }
@@ -227,6 +238,7 @@ function createNewSuscriptor_submit($form,  &$form_state){
         $suscriber = $body['data']['uid'];
         drupal_set_message( 'Se creó un nuevo suscriptor '.$suscriber);
         associateSuscriptionWithUser($body['data']);
+        changeSubcriberRoles(FALSE);
         drupal_goto($body['data']['subscriberUrl'], array('external' => TRUE));
       }
       else 
@@ -246,4 +258,87 @@ function createNewSuscriptor_submit($form,  &$form_state){
 }
 
 function associateSuscriptionWithUser($data = array()){
+
+  $uid = $GLOBALS['user']->uid;
+  $user = user_load($uid);
+  $subscription = [
+    LANGUAGE_NONE => [
+      '0' => [
+        'value' => $data['subscription']['uid'], 
+        'format' => '', 
+        'safe_value'=> $data['subscription']['uid'],
+      ]
+    ]
+  ];
+  $subscriber   = [
+    LANGUAGE_NONE => [
+      '0' => [
+        'value' => $data['uid'], 
+        'format' => '', 
+        'safe_value'=> $data['uid'],
+      ]
+    ]
+  ];
+  $subscriber_url   = [
+    LANGUAGE_NONE => [
+      '0' => [
+        'value' => $data['subscriberUrl'], 
+        'format' => '', 
+        'safe_value'=> $data['subscriberUrl'],
+      ]
+    ]
+  ];
+  $user->field_mobbex_subscription_uid = $subscription;
+  $user->field_mobbex_subscriber_uid   = $subscriber;
+  $user->field_mobbex_subscriber_url  = $subscriber_url;
+  user_save($user); 
+}
+
+
+function changeSubcriberRoles(bool $isActive){
+  $uid = $GLOBALS['user']->uid;
+
+  if($isActive){
+    custom_remove_role_from_user($uid, 'inactive_subscriptor');
+    $user = user_load($uid);
+    $role = user_role_load_by_name('active_subscriptor');
+    $new_roles = $user->roles + array($role->rid => $role->name);
+  }else{
+    custom_remove_role_from_user($uid, 'active_subscriptor');
+    $user = user_load($uid);
+    $role = user_role_load_by_name('inactive_subscriptor');
+    $new_roles = $user->roles + array($role->rid => $role->name);
+  }
+  user_save($user, ['roles'=> $new_roles]);
+}
+/**
+ * Remove a role from a user.
+ *
+ * @param $user
+ *   User object or user ID.
+ * @param $role_name
+ *   String value of role to be removed.
+ */
+function custom_remove_role_from_user($user, $role_name) {
+  // For convenience, we'll allow user ids as well as full user objects.
+  if (is_numeric($user)) {
+    $user = user_load($user);
+  }
+  // Only remove the role if the user already has it.
+  $key = array_search($role_name, $user->roles);
+  if ($key == TRUE) {
+    // Get the rid from the roles table.
+    $roles = user_roles(TRUE);
+    $rid = array_search($role_name, $roles);
+    if ($rid != FALSE) {
+      // Make a copy of the roles array, without the deleted one.
+      $new_roles = array();
+      foreach($user->roles as $id => $name) {
+        if ($id != $rid) {
+          $new_roles[$id] = $name;
+        }
+      }
+      user_save($user, array('roles' => $new_roles));
+    }
+  }
 }

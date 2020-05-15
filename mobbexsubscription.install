@@ -9,46 +9,137 @@
  * Implements hook_install().
  */
 function mobbexsubscription_install() {
-  // Add "User request" to the default group membership type.
-  $field_name = MOBBEX_SUSCRIBER_UID_FIELD;
-  if (!field_info_field($field_name)) {
-    $field = array(
-      'field_name' => $field_name,
-      'type' => 'text',
-      'entity_types' => array('mobbex_subscription'),
-      'cardinality' => 1,
-      // Although we would prefer to not allow deleting this field, we can not
-      // lock it, as it will not allow adding it to other bundles.
-      'locked' => FALSE,
-    );
-    $field = field_create_field($field);
-  }
+    $roles = user_roles(TRUE);
 
-  if (!field_info_instance('mobbex_subscription', $field_name, MOBBEX_DEFAULT)) {
-    $instance = array(
-      'field_name' => $field_name,
-      'bundle' => MOBBEX_DEFAULT,
-      'entity_type' => 'mobbex_subscription',
-      'label' => t('ID DE SUSCRIPTOR'),
-      'required' => FALSE,
-    );
-    field_create_instance($instance);
-  }
+    if (!in_array('active_subscriptor', $roles)) {
+        $role1 = new stdClass();
+        $role1->name = 'active_subscriptor';
+        user_role_save($role1);
+    }
+    if (!in_array('inactive_subscriptor', $roles)) {
+        $role2 = new stdClass();
+        $role2->name = 'inactive_subscriptor';
+        user_role_save($role2);
+    }
 }
-
 /**
  * Implements hook_uninstall().
  */
 function mobbexsubscription_uninstall() {
 
-  $vars = array(
-    'mobbexsubscription_apikey',
-    'mobbexsubscription_token',
-    'mobbexsubscription_idsubs',
-    'mobbexsubscription_activerole',
-  );
-
-  foreach ($vars as $var) {
-    variable_del($var);
+    $vars = array(
+      'mobbexsubscription_apikey',
+      'mobbexsubscription_token',
+      'mobbexsubscription_idsubs',
+      'mobbexsubscription_shorten_url',
+    );
+  
+    foreach ($vars as $var) {
+      variable_del($var);
+    }
   }
-}
+
+
+/**
+ * Implementation of hook_enable().
+ */
+function mobbexsubscription_enable() {
+    // Check if our field is not already created.
+    if (!field_info_field('field_mobbex_subscriber_uid')) {
+      $field = array(
+          'field_name' => 'field_mobbex_subscriber_uid', 
+          'type' => 'text', 
+        );
+        field_create_field($field);
+  
+        // Create the instance on the bundle.
+        $instance = array(
+          'field_name' => 'field_mobbex_subscriber_uid', 
+          'entity_type' => 'user', 
+          'label' => 'Mobbex UID Suscriptor', 
+          'bundle' => 'user', 
+          // If you don't set the "required" property then the field wont be required by default.
+          'required' => FALSE,
+          'settings' => array(
+             // Here you inform either or not you want this field showing up on the registration form.
+              'user_register_form' => 0,
+          ),
+          'widget' => array(
+              'type' => 'textfield',
+              'weight' => '1',
+          ), 
+      );
+      field_create_instance($instance);
+    }
+
+    if (!field_info_field('field_mobbex_subscription_uid')) {
+        $field = array(
+            'field_name' => 'field_mobbex_subscription_uid', 
+            'type' => 'text', 
+        );
+        field_create_field($field);
+    
+        // Create the instance on the bundle.
+        $instance = array(
+            'field_name' => 'field_mobbex_subscription_uid', 
+            'entity_type' => 'user', 
+            'label' => 'Mobbex UID Suscripción', 
+            'bundle' => 'user', 
+            // If you don't set the "required" property then the field wont be required by default.
+            'required' => FALSE,
+            'settings' => array(
+               // Here you inform either or not you want this field showing up on the registration form.
+                'user_register_form' => 0,
+            ),
+            'widget' => array(
+                'type' => 'textfield',
+                'weight' => '1',
+            ), 
+        );
+        field_create_instance($instance);
+      }
+      if (!field_info_field('field_mobbex_subscriber_url')) {
+        $field = array(
+            'field_name' => 'field_mobbex_subscriber_url', 
+            'type' => 'text', 
+        );
+        field_create_field($field);
+    
+        // Create the instance on the bundle.
+        $instance = array(
+            'field_name' => 'field_mobbex_subscriber_url', 
+            'entity_type' => 'user', 
+            'label' => 'Mobbex Url Suscriptor', 
+            'bundle' => 'user', 
+            // If you don't set the "required" property then the field wont be required by default.
+            'required' => FALSE,
+            'settings' => array(
+               // Here you inform either or not you want this field showing up on the registration form.
+                'user_register_form' => 0,
+            ),
+            'widget' => array(
+                'type' => 'textfield',
+                'weight' => '1',
+            ), 
+        );
+        field_create_instance($instance);
+      }
+  }
+
+
+  /**
+ * Implements hook_disable().
+ */
+function mobbexsubscription_disable() {
+
+    $vars = array(
+      'mobbexsubscription_apikey',
+      'mobbexsubscription_token',
+      'mobbexsubscription_idsubs',
+      'mobbexsubscription_activerole',
+    );
+  
+    foreach ($vars as $var) {
+      variable_del($var);
+    }
+  }

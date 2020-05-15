@@ -10,33 +10,55 @@
 function subscriber_page_form($form, &$form_state){
     $user = $GLOBALS['user'];
     $roles = $user->roles;
-    $activerole = variable_get('mobbexsubscription_activerole', 0);
-    if (isset($_GET['retorno']) && $_GET['retorno'] == 'mobbex') {
-        //primera vez 
-        if(is_current_user_suscriber()){
-            $form['welcome'] = [
-                '#markup' => '<div id="first-time-suscribe"> Gracias por suscribirte </div>'
-            ];
-        }else{
-            $form['welcome'] = [
-                '#markup' => '<div id="first-time-suscribe"> Al parecer la suscripción no se concretó, pero pueder volver a intentar en otro momento.  </div>'
-            ];
-            return $form;
-        }
-      }
+    $body = [];
+    $active = activeSubscriptorCheck($body);
 
-    if(isset($roles[$activerole])){
-        //el usuario tiene una suscripcion activa
-
-        $form['subscription_info'] = [
-            '#markup' => 'periodo, prox vec, darse de baja'
-        ];
-        return $form;
+    if(array_search('inactive_subscriptor', $user->roles) && $active){
+        changeSubcriberRoles(true);
     }
+    drupal_set_message('<pre>'.print_r($body, TRUE).'</pre>');
+    return $form;
 }
 
-function is_current_user_suscriber(){
-    //retorna el id de suscriptor si es correcto
-    //retorna false si no es un suscriptor
-    return true;
+
+function activeSubscriptorCheck(array &$body = []){
+    $uid = $GLOBALS['user']->uid;
+    $apikey = variable_get('mobbexsubscription_apikey', 0);
+    $token  = variable_get('mobbexsubscription_token', 0);
+
+    $user = user_load($uid);
+    $subscription   = $user->field_mobbex_subscription_uid[LANGUAGE_NONE]['0']['value'];
+    $subscriber     = $user->field_mobbex_subscriber_uid[LANGUAGE_NONE]['0']['value'];
+    $subscriber_url = $user->field_mobbex_subscriber_url[LANGUAGE_NONE]['0']['value'];
+    $request = new HTTP_Request2();
+    $request->setUrl('https://api.mobbex.com/p/subscriptions/'. $subscription .'/subscriber/'. $subscriber);
+    $request->setMethod(HTTP_Request2::METHOD_GET);
+    $request->setConfig(array(
+    'follow_redirects' => TRUE
+    ));
+    $request->setHeader(array(
+    'x-api-key'      => $apikey,
+    'x-access-token' => $token ,
+    'Content-Type' => 'application/json'
+    ));
+    try {
+    $response = $request->send();
+    if ($response->getStatus() == 200) {
+
+        $body = json_decode( $response->getBody(), TRUE);
+        if($body['data']['status'] == "active"){
+            if(isset($body['data']['executions']) && $body['data']['executions']['status'] == 'paid'){
+                return true;
+            }
+        }
+    }
+    else {
+        echo 'Unexpected HTTP status: ' . $response->getStatus() . ' ' .
+        $response->getReasonPhrase();
+    }
+    }
+    catch(HTTP_Request2_Exception $e) {
+    echo 'Error: ' . $e->getMessage();
+    }
+    return false;
 }
