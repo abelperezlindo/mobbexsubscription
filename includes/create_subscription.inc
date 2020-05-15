@@ -1,7 +1,7 @@
 <?php
 
 function create_subscription_form($form, &$form_state){
-    
+    global $base_url;
     $form['name'] = [
         '#type' => 'textfield',
         '#title' => t('Nombre'),
@@ -62,12 +62,14 @@ function create_subscription_form($form, &$form_state){
         '#title' => t('WebHook'),
         '#description' => t('URL en la que se recibirán las notificaciones via POST. Debe ser HTTPs.'),
         '#required' => TRUE,
+        '#default_value' => $base_url.'/mobbex/webhook',
     ];
     $form['return_url'] = [
         '#type' => 'textfield',
         '#title' => t('Url de returno'),
         '#description' => t('URL a la que se enviará al usuario una vez suscripto. Debe ser HTTPs.'),
         '#required' => TRUE,
+        '#default_value' => $base_url.'/mi-suscripcion',
     ];
     $form['confirm'] = [
         '#type' => 'submit',

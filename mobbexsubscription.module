@@ -34,6 +34,10 @@ function mobbexsubscription_permission(){
         'test_mobbexsubscription' =>  array(
           'title' => t('Mobbex Subscription - TEST'),
           'description' => t('Permisos para acceder a TEST .'),
+        ),
+        'acceso_webhook_mobbexsubscription' =>  array(
+          'title' => t('Mobbex Subscription - Webhook'),
+          'description' => t('Permisos para acceder a Webhook .'),          
         )
     ];
   }
@@ -87,6 +91,7 @@ function mobbexsubscription_permission(){
         'page callback' => 'drupal_get_form',
         'page arguments' => array('webhook_form'),
         'file' => 'includes/webhook.inc',
+        'access arguments' => array('acceso_webhook_mobbexsubscription'),
         'expanded' => TRUE,
       ];
       $items['admin/subscripciones/test'] = [
@@ -340,5 +345,14 @@ function custom_remove_role_from_user($user, $role_name) {
       }
       user_save($user, array('roles' => $new_roles));
     }
+  }
+}
+
+function mobbexsubscription_preprocess_user_profile(&$vars) {
+  $current_user = user_uid_optional_load();
+  if($current_user->uid != 1) {
+    unset($vars['user_profile']['field_mobbex_subscription_uid']);
+    unset($vars['user_profile']['field_mobbex_subscriber_uid']);
+    unset($vars['user_profile']['field_mobbex_subscriber_url']);
   }
 }
