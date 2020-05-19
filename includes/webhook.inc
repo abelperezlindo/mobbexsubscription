@@ -11,7 +11,7 @@ function webhook_form($form, &$form_state){
     $ip = ip_address();
     
     drupal_set_message( '<pre>' . print_r( $ip, true) . '</pre>');
-    watchdog("debug", '<pre>'. print_r( $obj, true) . '</pre>'); 
+    watchdog("debug", '<pre> ip'. $ip .  print_r( $postdata, true) . '</pre>'); 
     drupal_set_message( '<pre>' . print_r( $_POST, true) . '</pre>');
     return $form;
 }
