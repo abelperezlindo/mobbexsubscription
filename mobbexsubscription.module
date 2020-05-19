@@ -300,7 +300,7 @@ function associateSuscriptionWithUser($data = array()){
 }
 
 
-function changeSubcriberRoles(bool $isActive){
+function changeSubcriberRoles($isActive){
   $uid = $GLOBALS['user']->uid;
 
   if($isActive){

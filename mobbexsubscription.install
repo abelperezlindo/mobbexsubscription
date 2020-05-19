@@ -44,6 +44,18 @@ function mobbexsubscription_uninstall() {
  * Implementation of hook_enable().
  */
 function mobbexsubscription_enable() {
+    $roles = user_roles(TRUE);
+
+    if (!in_array('active_subscriptor', $roles)) {
+        $role1 = new stdClass();
+        $role1->name = 'active_subscriptor';
+        user_role_save($role1);
+    }
+    if (!in_array('inactive_subscriptor', $roles)) {
+        $role2 = new stdClass();
+        $role2->name = 'inactive_subscriptor';
+        user_role_save($role2);
+    }
     // Check if our field is not already created.
     if (!field_info_field('field_mobbex_subscriber_uid')) {
       $field = array(
