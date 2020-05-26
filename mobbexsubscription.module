@@ -8,6 +8,7 @@ module_load_include('inc', 'mobbexsubscription', 'includes/webhook.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/test.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/subscriber_page.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/create_subscription.inc');
+module_load_include('inc', 'mobbexsubscription', 'includes/data_access.inc');
 
 
 /**

@@ -44,6 +44,8 @@ function mobbexsubscription_uninstall() {
  * Implementation of hook_enable().
  */
 function mobbexsubscription_enable() {
+
+
     $roles = user_roles(TRUE);
 
     if (!in_array('active_subscriptor', $roles)) {
@@ -135,9 +137,9 @@ function mobbexsubscription_enable() {
             ), 
         );
         field_create_instance($instance);
-      }
+    }
+    
   }
-
 
   /**
  * Implements hook_disable().
@@ -155,3 +157,90 @@ function mobbexsubscription_disable() {
       variable_del($var);
     }
   }
+
+  function mobbexsubscription_schema() {
+
+    $schema['mobbexsubscription'] = [
+
+      'description'=> 'Se guarda informacion relacionada a un suscriptor.',
+      'fields'     => [
+        'id_table'     => [
+            'type'        => 'serial',
+            'not null'    => TRUE,
+            'description' => 'Clave primaria de la tabla, identifica un registro.',
+            'unsigned'    => TRUE,
+        ],
+        'uid' => [
+            'type'        => 'int',
+            'not null'    => TRUE,
+            'default'     => 0,
+            'description' => "Usuario drupal asociado a la suscripción",
+        ],
+        'subscription_id' => [
+            'type'        => 'varchar',
+            'length'      => 255,
+            'not null'    => TRUE,
+            'default'     => 0,
+            'description' => "ID suscripcion mobbex",
+        ],
+        'subscriber_id'   => [
+            'type'        => 'varchar',
+            'length'      => 255,
+            'not null'    => TRUE,
+            'default'     => 0,
+            'description' => "ID de suscriptor mobbex",
+        ],
+        'status' => [
+            'type'        => 'int',
+            'length'      => 1,
+            'not null'    => TRUE,
+            'default'     => 0,
+            'description' => ">Estado actual de el suscriptor",
+        ],
+
+        'source' => [
+            'type'        => 'varchar',
+            'length'      => 40,
+            'not null'    => FALSE,
+            'description' => "Tipo de medio de pago agregado",
+        ],
+        'uptodatepay'=> [
+            'type'        => 'int',
+            'length'      => 1,
+            'not null'    => TRUE,
+            'default'     => 0,
+            'description' => "Indica si el pago esta al dia",
+        ],
+        'created'=> [
+          'type'          => 'datetime',
+          'mysql_type'    => 'datetime',
+          'not null'      => TRUE,
+          'description'   => "Indica fecha de creación",
+          'default'       => date("Y-m-d H:i:s")
+        ],
+        'updated'=> [
+          'type'          => 'datetime',
+          'mysql_type'    => 'datetime',
+          'not null'      => TRUE,
+          'description'   => "Indica fecha de ultima actualización",
+          'default'       => date("Y-m-d H:i:s")
+        ],
+
+      ],
+      'primary key' => ['id_table'],
+      'indexes'     => [
+          'uid'            => ['uid'],
+          'subscription_id'=> ['subscription_id'],
+          'subscriber_id'  => ['subscriber_id'],
+          'status'         => ['status'],
+          'source'         => ['source'],
+          'uptodatepay'    => ['uptodatepay'],
+          'created'        => ['created'],
+          'updated'        => ['updated']
+
+      ],
+    ];
+  
+    return $schema;
+  }
+  

@@ -8,7 +8,7 @@
  */
 
 function mobbexsubscription_config_form($form, &$form_state){
-
+  
     $config = getDataConfig();
 
     $form['access_config'] = [
@@ -217,3 +217,4 @@ function drawSubsList($result) {
 
     return  theme('table', array('header' => $header, 'rows' => $tabla));
 }
+
