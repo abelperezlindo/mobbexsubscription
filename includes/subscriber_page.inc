@@ -1,7 +1,9 @@
 <?php
-
 /**
- *      Implements hook_form()
+ * @file 
+ * Info suscripción por usuario
+ * 
+ * Implements hook_form()
  * 
  *      Informacion de suscripción por usuarios
  * 

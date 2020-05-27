@@ -3,9 +3,7 @@
 /**
  * @file
  * Install, update, and uninstall functions for the Organic groups module.
- */
-
-/**
+ * 
  * Implements hook_install().
  */
 function mobbexsubscription_install() {
@@ -39,9 +37,8 @@ function mobbexsubscription_uninstall() {
     }
   }
 
-
 /**
- * Implementation of hook_enable().
+ * Implements hook_enable().
  */
 function mobbexsubscription_enable() {
 
@@ -141,7 +138,7 @@ function mobbexsubscription_enable() {
     
   }
 
-  /**
+/**
  * Implements hook_disable().
  */
 function mobbexsubscription_disable() {
@@ -157,7 +154,10 @@ function mobbexsubscription_disable() {
       variable_del($var);
     }
   }
-
+/**
+ * Implements hook_schema().
+ *
+ */
   function mobbexsubscription_schema() {
 
     $schema['mobbexsubscription'] = [
@@ -242,5 +242,5 @@ function mobbexsubscription_disable() {
     ];
   
     return $schema;
-  }
+}
   

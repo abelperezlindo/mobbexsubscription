@@ -1,9 +1,11 @@
 <?php
-
 /**
- *      Implements hook_form()
+ * @file
+ * Contiene formulario de configuraciones 
+ *
+ * Implements hook_form()
  * 
- *      Formulario para alta para configuraciones de la subscripción
+ *    Formulario para alta para configuraciones de la subscripción
  * 
  */
 
@@ -12,37 +14,36 @@ function mobbexsubscription_config_form($form, &$form_state){
     $config = getDataConfig();
 
     $form['access_config'] = [
-        '#type' => 'fieldset',
-        '#title' => t('Acceso a la API de Mobbex'),
+        '#type'        => 'fieldset',
+        '#title'       => t('Acceso a la API de Mobbex'),
         '#description' => t('Ingrese la información necesaria para comunicarse con Mobbex'),
     ];
     $form['access_config']['api_key'] = [
-        '#type' => 'textfield',
-        '#title' => t('Clave API'),
-        '#description' => t('Ingrese la Clave API de su aplicación'),
-        '#default_value' => $config['apikey'],
+        '#type'         => 'textfield',
+        '#title'        => t('Clave API'),
+        '#description'  => t('Ingrese la Clave API de su aplicación'),
+        '#default_value'=> $config['apikey'],
     ];
     $form['access_config']['access_token'] = [
-        '#type' => 'textfield',
-        '#title' => t('Token de Acceso '),
-        '#description' => t('Ingrese el Token de Acceso a la entidad para la cual desea realizar las operaciónes.'),
-        '#default_value' => $config['token'],
+        '#type'         => 'textfield',
+        '#title'        => t('Token de Acceso '),
+        '#description'  => t('Ingrese el Token de Acceso a la entidad para la cual desea realizar las operaciónes.'),
+        '#default_value'=> $config['token'],
     ];
-
     $form['subscription_config'] = [
-        '#type' => 'fieldset',
-        '#title' => t('Configuraciones Subscripción'),
+        '#type'        => 'fieldset',
+        '#title'       => t('Configuraciones Subscripción'),
         '#description' => t('Ingrese la información necesaria para configurar la subs'),
     ];
     $form['subscription_config']['id_subscription'] = [
-        '#type' => 'textfield',
-        '#title' => t('Id de Subscripción'),
-        '#description' => t('Ingrese el ID de la Subscripción '),
-        '#default_value' => $config['idsub'],
+        '#type'         => 'textfield',
+        '#title'        => t('Id de Subscripción'),
+        '#description'  => t('Ingrese el ID de la Subscripción '),
+        '#default_value'=> $config['idsub'],
     ];
     if(isset($form_state['subsList'])){
         $form['subscription_config']['List'] = array(
-            '#markup' => $form_state['subsList']
+            '#markup'   => $form_state['subsList']
           );
     }
     $form['subscription_config']['createSubscription'] = array(
@@ -53,23 +54,24 @@ function mobbexsubscription_config_form($form, &$form_state){
         ),
       );
     $form['subscription_config']['getSubList'] = array(
-        '#type'   => 'submit',
-        '#name'   => 'getSubList',
-        '#value'  => t('Listar suscripciones'),
+        '#type'     => 'submit',
+        '#name'     => 'getSubList',
+        '#value'    => t('Listar suscripciones'),
         '#validate' => ['getSubList_validate'],
-        '#submit' => ['getSubList_submit'],
-      );
-
-
+        '#submit'   => ['getSubList_submit'],
+    );
     $form['save'] = array(
-        '#type' => 'submit',
-        '#name'   => 'SaveConfig',
-        '#value' => t('Guardar las configuraciones'),
+        '#type'     => 'submit',
+        '#name'     => 'SaveConfig',
+        '#value'    => t('Guardar las configuraciones'),
         '#validate' => ['SaveConfig_validate'],
-        '#submit' => ['SaveConfig_submit'],
+        '#submit'   => ['SaveConfig_submit'],
       );
     return $form;
 }
+/**
+ * Validación principal del Formulario.
+ */
 function SaveConfig_validate($form, &$form_state){
     if (empty($form_state['values']['api_key'])) {
         form_set_error(
@@ -91,6 +93,9 @@ function SaveConfig_validate($form, &$form_state){
     }
 
 }
+/**
+ * Validación para obtener listado de suscripciones
+ */
 function getSubList_validate($form, &$form_state){
     if (empty($form_state['values']['api_key'])) {
         form_set_error(
@@ -106,6 +111,9 @@ function getSubList_validate($form, &$form_state){
         );
     }
 }
+/**
+ * Envío de Obtener listado de suscripciones.
+ */
 function getSubList_submit($form, &$form_state){
   
     $apikey = $form_state['values']['api_key'];
@@ -133,7 +141,9 @@ function getSubList_submit($form, &$form_state){
     $form_state['rebuild'] = TRUE;
 }
 
-
+/**
+ * Envío principal del Formulario.
+ */
 function SaveConfig_submit($form, &$form_state){
     variable_set(
         'mobbexsubscription_apikey', 
@@ -147,12 +157,7 @@ function SaveConfig_submit($form, &$form_state){
         'mobbexsubscription_idsubs', 
         $form_state['values']['id_subscription']
     );
- /*
-    variable_set(
-        'mobbexsubscription_activerole' , 
-        $form_state['values']['role_subscriber_active']
-    );
- */
+
 
     $idSubscription = $form_state['values']['id_subscription'];
     $urlBase = 'https://api.mobbex.com/p/subscriptions/'.$idSubscription;
@@ -189,9 +194,9 @@ function SaveConfig_submit($form, &$form_state){
 }
 function getDataConfig(){
     return [
-        'apikey'           => variable_get('mobbexsubscription_apikey', 0),
-        'token'            => variable_get('mobbexsubscription_token', 0),
-        'idsub'            => variable_get('mobbexsubscription_idsubs', 0),
+        'apikey'  => variable_get('mobbexsubscription_apikey', 0),
+        'token'   => variable_get('mobbexsubscription_token', 0),
+        'idsub'   => variable_get('mobbexsubscription_idsubs', 0),
     ];
 }
 
@@ -200,7 +205,7 @@ function drawSubsList($result) {
     $aux = 0;
     $tabla = [];
     foreach ($result['data']['docs'] as $valor){
-        //drupal_set_message(print_r($valor, TRUE));
+        
         $tabla[$aux]['UID']         = $valor['uid'];
         $tabla[$aux]['NAME']        = $valor['name'];
         $tabla[$aux]['DESCRIPTION'] = $valor['description'];
@@ -210,7 +215,15 @@ function drawSubsList($result) {
         $tabla[$aux]['URL']         = $valor['url'];
         $aux ++;        
     }
-    $header = [t('UID'),t('NOMBRE'),t('DESCRIPCIÓN'),t('INTERVALO'),t('SUSCRIPTORES'),t('TOTAL'),t('URL SUBSCRIPCIÓN') ];
+    $header = [
+        t('UID'),
+        t('NOMBRE'),
+        t('DESCRIPCIÓN'),
+        t('INTERVALO'),
+        t('SUSCRIPTORES'),
+        t('TOTAL'),
+        t('URL SUBSCRIPCIÓN') 
+    ];
 
     if(count($tabla)==0)
         return 'NO SE ENCONTRARON DATOS';

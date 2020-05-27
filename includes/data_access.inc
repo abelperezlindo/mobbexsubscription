@@ -1,5 +1,15 @@
 <?php
-
+/**
+ * @file
+ * Comunicación con la base de datos 
+ *
+ * Inserta un nuevo registro en la base de datos.
+ *
+ * @param mixed $entry
+ *     Array con los valores a guardar
+ * @return int  
+ *     The number of rows updated.
+ */
 function mobbexsubscription_entry_insert($entry) {
     $return_value = NULL;
     try {
@@ -17,7 +27,14 @@ function mobbexsubscription_entry_insert($entry) {
     }
     return $return_value;
 }
-
+ /**
+  * Actualiza un registro en la base de datos.
+  *
+  * @param mixed $entry
+  *     Array con los valores a guardar
+  * @return int
+  *     The number of rows updated.
+  */
 function mobbexsubscription_entry_update($entry) {
     if(!isset($entry['updated'])) $entry['updated'] = date("Y-m-d H:m:s");
     

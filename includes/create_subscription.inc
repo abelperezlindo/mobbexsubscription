@@ -1,86 +1,97 @@
 <?php
-
+/**
+ * @file
+ * Contiene un formulario.
+ * 
+ * Implements hook_form().
+ * 
+ *      Formulario para alta una nueva suscripción.
+ * 
+ */
 function create_subscription_form($form, &$form_state){
     global $base_url;
     $form['name'] = [
-        '#type' => 'textfield',
-        '#title' => t('Nombre'),
-        '#description' => t('El nombre de la suscripción, se mostrará como un titulo en el Checkout.'),
-        '#required' => TRUE,
+        '#type'          => 'textfield',
+        '#title'         => t('Nombre'),
+        '#description'   => t('El nombre de la suscripción, se mostrará como un titulo en el Checkout.'),
+        '#required'      => TRUE,
     ];
     $form['description'] = [
-        '#type' => 'textfield',
-        '#title' => t('Descripción'),
-        '#description' => t('Descripción de la operación que será mostrada en el Checkout.'),
-        '#required' => TRUE,
+        '#type'          => 'textfield',
+        '#title'         => t('Descripción'),
+        '#description'   => t('Descripción de la operación que será mostrada en el Checkout.'),
+        '#required'      => TRUE,
     ];
     $form['type'] = [
-        '#type' => 'select',
-        '#title' => t('Tipo'),
-        '#options' => ['dynamic' => 'dynamic', 'manual' => 'manual'],
-        '#description' => t('Valores posibles: dynamic o manual. Las suscripciones de tipo manual deberán procesarse externamente llamando al servicio, no se tendrá en cuenta intervalo en este tipo.'),
+        '#type'          => 'select',
+        '#title'         => t('Tipo'),
+        '#options'       => ['dynamic' => 'dynamic', 'manual' => 'manual'],
+        '#description'   => t('Valores posibles: dynamic o manual. Las suscripciones de tipo manual deberán procesarse externamente llamando al servicio, no se tendrá en cuenta intervalo en este tipo.'),
         '#default_value' => 'dynamic',
-        '#required' => TRUE,
+        '#required'      => TRUE,
     ];
     $form['interval'] = [
-        '#type' => 'textfield',
-        '#title' => t('Intervalo'),
-        '#description' => t('Intervalo de Cobro de la suscripción.'),
+        '#type'          => 'textfield',
+        '#title'         => t('Intervalo'),
+        '#description'   => t('Intervalo de Cobro de la suscripción.'),
         '#default_value' => '1m',
-        '#required' => TRUE,
+        '#required'      => TRUE,
     ];
     $form['trial'] = [
-        '#type' => 'textfield',
-        '#title' => t('Periodos de prueba'),
-        '#description' => t('Cantidadd de Periodos de Prueba.'),
+        '#type'          => 'textfield',
+        '#title'         => t('Periodos de prueba'),
+        '#description'   => t('Cantidadd de Periodos de Prueba.'),
         '#default_value' => '0',
-        '#required' => TRUE,
+        '#required'      => TRUE,
     ]; 
     $form['limit'] = [
-        '#type' => 'textfield',
-        '#title' => t('Duración limite'),
-        '#description' => t('Duracion de la suscripción en meses'),
+        '#type'          => 'textfield',
+        '#title'         => t('Duración limite'),
+        '#description'   => t('Duracion de la suscripción en meses'),
         '#default_value' => '0',
-        '#required' => TRUE,
+        '#required'      => TRUE,
     ];
     $form['total'] = [
-        '#type' => 'textfield',
-        '#title' => t('Monto'),
-        '#description' => t('Cantidadd de Periodos de Prueba.'),
-        '#required' => TRUE,
+        '#type'          => 'textfield',
+        '#title'         => t('Monto'),
+        '#description'   => t('Cantidadd de Periodos de Prueba.'),
+        '#required'      => TRUE,
     ];
     $form['currency'] = [
-        '#type' => 'textfield',
-        '#title' => t('Tipo de moneda'),
-        '#description' => t('Moneda de la operación.'),
+        '#type'          => 'textfield',
+        '#title'         => t('Tipo de moneda'),
+        '#description'   => t('Moneda de la operación.'),
         '#default_value' => 'ARS',
-        '#required' => TRUE,
+        '#required'      => TRUE,
 
     ];
     $form['webhook'] = [
-        '#type' => 'textfield',
-        '#title' => t('WebHook'),
-        '#description' => t('URL en la que se recibirán las notificaciones via POST. Debe ser HTTPs.'),
-        '#required' => TRUE,
+        '#type'          => 'textfield',
+        '#title'         => t('WebHook'),
+        '#description'   => t('URL en la que se recibirán las notificaciones via POST. Debe ser HTTPs.'),
+        '#required'      => TRUE,
         '#default_value' => $base_url.'/mobbex/webhook',
     ];
     $form['return_url'] = [
-        '#type' => 'textfield',
-        '#title' => t('Url de returno'),
-        '#description' => t('URL a la que se enviará al usuario una vez suscripto. Debe ser HTTPs.'),
-        '#required' => TRUE,
+        '#type'          => 'textfield',
+        '#title'         => t('Url de returno'),
+        '#description'   => t('URL a la que se enviará al usuario una vez suscripto. Debe ser HTTPs.'),
+        '#required'      => TRUE,
         '#default_value' => $base_url.'/mi-suscripcion',
     ];
     $form['confirm'] = [
-        '#type' => 'submit',
-        '#name' => 'confirmNewSubscription',
-        '#value' => t('Confirmar'),
-        '#validate' => ['confirmNewSubscription_validate'],
-        '#submit' => ['confirmNewSubscription_submit'],
+        '#type'          => 'submit',
+        '#name'          => 'confirmNewSubscription',
+        '#value'         => t('Confirmar'),
+        '#validate'      => ['confirmNewSubscription_validate'],
+        '#submit'        => ['confirmNewSubscription_submit'],
     ];
 
     return $form;
 }
+/**
+ * Validación del Formulario
+ */
 function confirmNewSubscription_validate($form, &$form_state){
     if (empty($form_state['values']['name'])) {
         form_set_error('name', t('Campo obligatorio'));
@@ -94,14 +105,6 @@ function confirmNewSubscription_validate($form, &$form_state){
     if (empty($form_state['values']['interval'])) {
         form_set_error('interval', t('Campo obligatorio'));
     }
-    /*
-    if (empty($form_state['values']['trial'])) {
-        form_set_error('trial', t('Campo obligatorio'));
-    }
-    if (empty($form_state['values']['limit'])) {
-        form_set_error('limit', t('Campo obligatorio'));
-    }
-    */
     if (empty($form_state['values']['currency'])) {
         form_set_error('currency', t('Campo obligatorio'));
     }
@@ -115,12 +118,14 @@ function confirmNewSubscription_validate($form, &$form_state){
         form_set_error('', t('Campo obligatorio'));
     }
 }
+/**
+ * Envío del formulario.
+ */
 function confirmNewSubscription_submit($form, &$form_state){
 
     
     $apikey = variable_get('mobbexsubscription_apikey', 0);
     $token  = variable_get('mobbexsubscription_token', 0);
-
 
     if(!$apikey || !$token) return;
 

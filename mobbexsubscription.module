@@ -1,8 +1,13 @@
 <?php
+/**
+ * @file
+ * Module, Permissions, block
+ */
 
+// Require a composer package
 require __DIR__ . '/includes/vendor/autoload.php';
 
-
+// Archivos incluidos
 module_load_include('inc', 'mobbexsubscription', 'includes/set_config.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/webhook.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/test.inc');
@@ -17,7 +22,9 @@ module_load_include('inc', 'mobbexsubscription', 'includes/data_access.inc');
 function mobbexsubscription_init(){
 
 }
-
+/**
+ * Implements hook_permission
+ */
 function mobbexsubscription_permission(){
     return [
         'acceso_configurar_mobbexsubscription' =>  array(
@@ -112,7 +119,7 @@ function mobbexsubscription_permission(){
   }
   
 /**
- *  Implementa hook_block_info()
+ *  Implements hook_block_info()
  */
 function mobbexsubscription_block_info() {
 
@@ -164,7 +171,10 @@ function mobbexsubscription_contents($which_block) {
       return $result;
   }
 }
-
+/**
+ * Implements hook_form().
+ *    Formulario auxiliar para la prueba de la suscripcion de un usuario
+ */
 function createNewSuscriptor_form($form,  &$form_state){
 
 $form['dni'] = [
@@ -300,7 +310,11 @@ function associateSuscriptionWithUser($data = array()){
   user_save($user); 
 }
 
-
+/**
+ * Cambia el rol al usuario actual.
+ * @param bool $isActive
+ *    Estado al que pasara el usuario actual representado por un rol
+ */
 function changeSubcriberRoles($isActive){
   $uid = $GLOBALS['user']->uid;
 
@@ -348,7 +362,10 @@ function custom_remove_role_from_user($user, $role_name) {
     }
   }
 }
-
+/**
+ * Implements hook_preprocess_user_profile()
+ *    Deja invisible fields 
+ */
 function mobbexsubscription_preprocess_user_profile(&$vars) {
   $current_user = user_uid_optional_load();
   if($current_user->uid != 1) {
