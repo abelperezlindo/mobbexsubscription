@@ -54,3 +54,31 @@ function mobbexsubscription_entry_update($entry) {
     return $count;
 }
     
+ /**
+  * Obtiene un registro en la base de datos, o todos lo s que coinsidan con
+  * el user id.
+  *
+  * @param int $uid
+  *     Id de usuario drupal
+  * @return mixed
+  *     respuesta o cero.
+  */
+  function mobbexsubscription_entry_get($uid) {
+    $result = db_select('mobbexsubscription', 'mbx')
+    ->fields('mbx')
+    ->condition('uid', $uid,'=')
+    ->execute()
+    ->fetchAll();
+    if(empty($result)) return 0;
+    if(count($result) == 1) return $result[0];
+    return $result;
+}
+    
+function isCurrentUserSuscriber($account = NULL){
+    if (!$account) 
+        $account = $GLOBALS['user'];
+
+    $role = user_role_load_by_name("active_subscriptor");
+    if(empty($role)) return FALSE;
+    return isset($account->roles[$role->rid]);
+}

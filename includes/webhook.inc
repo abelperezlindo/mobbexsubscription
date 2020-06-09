@@ -36,6 +36,7 @@ function webhook_form($form, &$form_state){
 function manageWebhookRequest($obj){
     switch($obj['type']){
         case "subscription:registration" : 
+            
             /*
              {
                     "type": "subscription:registration",

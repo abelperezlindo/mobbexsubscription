@@ -8,6 +8,8 @@
  *      Formulario para alta una nueva suscripción.
  * 
  */
+include "moxy.php";
+include "data_access.inc";
 function create_subscription_form($form, &$form_state){
     global $base_url;
     $form['name'] = [
@@ -128,18 +130,7 @@ function confirmNewSubscription_submit($form, &$form_state){
     $token  = variable_get('mobbexsubscription_token', 0);
 
     if(!$apikey || !$token) return;
-
-    $request = new HTTP_Request2();
-    $request->setUrl('https://api.mobbex.com/p/subscriptions');
-    $request->setMethod(HTTP_Request2::METHOD_POST);
-    $request->setConfig(['follow_redirects' => TRUE]);
-
-    $header = [
-        'x-api-key'      => $apikey,
-        'x-access-token' => $token ,
-        'Content-Type'   => 'application/json',
-        'Content-Type'   => 'application/x-www-form-urlencoded'
-    ];
+ 
     $data = [
         'name'          => $form_state['values']['name'],
         'description'   => $form_state['values']['description'],
@@ -152,28 +143,12 @@ function confirmNewSubscription_submit($form, &$form_state){
         'webhook'       => $form_state['values']['webhook'],
         'return_url'    => $form_state['values']['return_url'],
     ];
-    $request->setHeader($header);
-    $request->addPostParameter($data);
-
-    try {
-        $response = $request->send();
-        if ($response->getStatus() == 200) {
-            $body = json_decode($response->getBody(), TRUE);
-            if($body['result'] == 'true')
-                drupal_set_message( 'Se creó la suscripcion '.$body['data']['uid']);
-            else 
-                drupal_set_massage('Ocurrio un error', 'ERROR');
-        }
-        else {
-            $message = 'Unexpected HTTP status: ' . $response->getStatus() . ' ' .$response->getReasonPhrase();
-            watchdog('mebbexsubscription', $message, array(), WATCHDOG_ERROR);
-            drupal_set_message($message);
-        }
-    }
-    catch(HTTP_Request2_Exception $e) {
-        $message = 'Error: ' . $e->getMessage();
-        watchdog('mebbexsubscription', $message, array(), WATCHDOG_ERROR);
-        drupal_set_message($message);
-    }  
+    $mbx  = new Moxy($apikey, $token);
+    $body = $mbx->setNewSuscription($data);
+    
+    if($body['result'] == 'true')
+        drupal_set_message( 'Se creó la suscripcion '.$body['data']['uid']);
+    else 
+        drupal_set_massage('Ocurrio un error', 'ERROR');
     
 }

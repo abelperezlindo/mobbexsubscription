@@ -235,10 +235,12 @@ function createNewSuscriptor_submit($form,  &$form_state){
         'name'             => $form_state['values']['nombre'],
         'custom_id_drupal' => $uid
     ],
+    'test'      => 'true',
     'startDate' => [
         'day' => date('j'),
         'month' => date('n'),
     ],
+    'reference' => 'algunid'
   ];
 
   $json = json_encode($data);
