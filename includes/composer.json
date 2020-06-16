@@ -1,5 +1,0 @@
-{
-    "require": {
-        "pear/http_request2": "^2.3"
-    }
-}
