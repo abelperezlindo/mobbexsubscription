@@ -8,8 +8,7 @@
  *      Formulario para alta una nueva suscripción.
  * 
  */
-include "moxy.php";
-include "data_access.inc";
+
 function create_subscription_form($form, &$form_state){
     global $base_url;
     $form['name'] = [

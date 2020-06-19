@@ -2,23 +2,19 @@
 
 /**
  * @file
- * Install, update, and uninstall functions for the Organic groups module.
+ * Install, update, and uninstall functions.
  * 
  * Implements hook_install().
  */
 function mobbexsubscription_install() {
-    $roles = user_roles(TRUE);
+  $roles = user_roles(TRUE);
 
-    if (!in_array('active_subscriptor', $roles)) {
-        $role1 = new stdClass();
-        $role1->name = 'active_subscriptor';
-        user_role_save($role1);
-    }
-    if (!in_array('inactive_subscriptor', $roles)) {
-        $role2 = new stdClass();
-        $role2->name = 'inactive_subscriptor';
-        user_role_save($role2);
-    }
+  if (!in_array('active_subscriptor', $roles)) {
+      $role1 = new stdClass();
+      $role1->name = 'active_subscriptor';
+      user_role_save($role1);
+  }
+
 }
 /**
  * Implements hook_uninstall().
@@ -29,20 +25,19 @@ function mobbexsubscription_uninstall() {
       'mobbexsubscription_apikey',
       'mobbexsubscription_token',
       'mobbexsubscription_idsubs',
-      'mobbexsubscription_shorten_url',
     );
   
     foreach ($vars as $var) {
       variable_del($var);
     }
+    user_role_delete('active_subscriptor');
   }
+
 
 /**
  * Implements hook_enable().
  */
 function mobbexsubscription_enable() {
-
-
     $roles = user_roles(TRUE);
 
     if (!in_array('active_subscriptor', $roles)) {
@@ -50,93 +45,8 @@ function mobbexsubscription_enable() {
         $role1->name = 'active_subscriptor';
         user_role_save($role1);
     }
-    if (!in_array('inactive_subscriptor', $roles)) {
-        $role2 = new stdClass();
-        $role2->name = 'inactive_subscriptor';
-        user_role_save($role2);
-    }
-    // Check if our field is not already created.
-    if (!field_info_field('field_mobbex_subscriber_uid')) {
-      $field = array(
-          'field_name' => 'field_mobbex_subscriber_uid', 
-          'type' => 'text', 
-        );
-        field_create_field($field);
-  
-        // Create the instance on the bundle.
-        $instance = array(
-          'field_name' => 'field_mobbex_subscriber_uid', 
-          'entity_type' => 'user', 
-          'label' => 'Mobbex UID Suscriptor', 
-          'bundle' => 'user', 
-          // If you don't set the "required" property then the field wont be required by default.
-          'required' => FALSE,
-          'settings' => array(
-             // Here you inform either or not you want this field showing up on the registration form.
-              'user_register_form' => 0,
-          ),
-          'widget' => array(
-              'type' => 'textfield',
-              'weight' => '1',
-          ), 
-      );
-      field_create_instance($instance);
-    }
 
-    if (!field_info_field('field_mobbex_subscription_uid')) {
-        $field = array(
-            'field_name' => 'field_mobbex_subscription_uid', 
-            'type' => 'text', 
-        );
-        field_create_field($field);
-    
-        // Create the instance on the bundle.
-        $instance = array(
-            'field_name' => 'field_mobbex_subscription_uid', 
-            'entity_type' => 'user', 
-            'label' => 'Mobbex UID Suscripción', 
-            'bundle' => 'user', 
-            // If you don't set the "required" property then the field wont be required by default.
-            'required' => FALSE,
-            'settings' => array(
-               // Here you inform either or not you want this field showing up on the registration form.
-                'user_register_form' => 0,
-            ),
-            'widget' => array(
-                'type' => 'textfield',
-                'weight' => '1',
-            ), 
-        );
-        field_create_instance($instance);
-      }
-      if (!field_info_field('field_mobbex_subscriber_url')) {
-        $field = array(
-            'field_name' => 'field_mobbex_subscriber_url', 
-            'type' => 'text', 
-        );
-        field_create_field($field);
-    
-        // Create the instance on the bundle.
-        $instance = array(
-            'field_name' => 'field_mobbex_subscriber_url', 
-            'entity_type' => 'user', 
-            'label' => 'Mobbex Url Suscriptor', 
-            'bundle' => 'user', 
-            // If you don't set the "required" property then the field wont be required by default.
-            'required' => FALSE,
-            'settings' => array(
-               // Here you inform either or not you want this field showing up on the registration form.
-                'user_register_form' => 0,
-            ),
-            'widget' => array(
-                'type' => 'textfield',
-                'weight' => '1',
-            ), 
-        );
-        field_create_instance($instance);
-    }
-    
-  }
+}
 
 /**
  * Implements hook_disable().
@@ -147,12 +57,13 @@ function mobbexsubscription_disable() {
       'mobbexsubscription_apikey',
       'mobbexsubscription_token',
       'mobbexsubscription_idsubs',
-      'mobbexsubscription_activerole',
     );
   
     foreach ($vars as $var) {
       variable_del($var);
     }
+
+    user_role_delete('active_subscriptor');
   }
 /**
  * Implements hook_schema().
@@ -197,20 +108,6 @@ function mobbexsubscription_disable() {
             'default'     => 0,
             'description' => ">Estado actual de el suscriptor",
         ],
-
-        'source' => [
-            'type'        => 'varchar',
-            'length'      => 40,
-            'not null'    => FALSE,
-            'description' => "Tipo de medio de pago agregado",
-        ],
-        'uptodatepay'=> [
-            'type'        => 'int',
-            'length'      => 1,
-            'not null'    => TRUE,
-            'default'     => 0,
-            'description' => "Indica si el pago esta al dia",
-        ],
         'created'=> [
           'type'          => 'datetime',
           'mysql_type'    => 'datetime',
@@ -233,8 +130,101 @@ function mobbexsubscription_disable() {
           'subscription_id'=> ['subscription_id'],
           'subscriber_id'  => ['subscriber_id'],
           'status'         => ['status'],
-          'source'         => ['source'],
-          'uptodatepay'    => ['uptodatepay'],
+          'created'        => ['created'],
+          'updated'        => ['updated']
+
+      ],
+    ];
+
+    $schema['mobbexexecution'] = [
+
+      'description'=> 'Se guarda informacion relacionada a un suscriptor.',
+      'fields'     => [
+        'id_table'     => [
+            'type'        => 'serial',
+            'not null'    => TRUE,
+            'description' => 'Clave primaria de la tabla, identifica un registro.',
+            'unsigned'    => TRUE,
+        ],
+        'uid' => [
+            'type'        => 'int',
+            'not null'    => TRUE,
+            'default'     => 0,
+            'description' => "Usuario drupal asociado a la suscripción",
+        ],
+        'subscription_id' => [
+            'type'        => 'varchar',
+            'length'      => 255,
+            'not null'    => TRUE,
+            'default'     => 0,
+            'description' => "ID suscripcion mobbex",
+        ],
+        'subscriber_id'   => [
+            'type'        => 'varchar',
+            'length'      => 255,
+            'not null'    => TRUE,
+            'default'     => 0,
+            'description' => "ID de suscriptor mobbex",
+        ],
+        'description' => [
+            'type'        => 'varchar',
+            'length'      => 255,
+            'not null'    => TRUE,
+            'default'     => 0,
+            'description' => "Descripcion de la ejecución",
+        ],
+        'status' => [
+            'type'        => 'varchar',
+            'length'      => 50,
+            'not null'    => FALSE,
+            'description' => "Estado de la ejecución",
+        ],
+        'total' => [
+            'type' => 'float', 
+            'unsigned' => TRUE, 
+            'size' => 'normal', // normal / big
+            'not null' => FALSE, 
+            'description' => "Monto en pesos",
+        ],
+        'datetime' => [
+            'type'          => 'datetime',
+            'mysql_type'    => 'datetime',
+            'not null'      => TRUE,
+            'description'   => "Indica fecha de la ejecución",
+            'default'       => date("Y-m-d H:i:s")
+        ],
+        'reference' => [
+          'type'        => 'varchar',
+          'length'      => 255,
+          'not null'    => FALSE,
+          'description' => "Referencia de la ejecución",
+        ],
+        'created'=> [
+          'type'          => 'datetime',
+          'mysql_type'    => 'datetime',
+          'not null'      => TRUE,
+          'description'   => "Indica fecha de creación registro",
+          'default'       => date("Y-m-d H:i:s")
+        ],
+        'updated'=> [
+          'type'          => 'datetime',
+          'mysql_type'    => 'datetime',
+          'not null'      => TRUE,
+          'description'   => "Indica fecha de ultima actualización registro",
+          'default'       => date("Y-m-d H:i:s")
+        ],
+
+      ],
+      'primary key' => ['id_table'],
+      'indexes'     => [
+          'uid'            => ['uid'],
+          'subscription_id'=> ['subscription_id'],
+          'subscriber_id'  => ['subscriber_id'],
+          'description'    => ['description'],
+          'status'         => ['status'],
+          'total'          => ['total'],
+          'datetime'       => ['datetime'],
+          'reference'      => ['reference'],
           'created'        => ['created'],
           'updated'        => ['updated']
 

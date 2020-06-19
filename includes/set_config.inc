@@ -8,12 +8,14 @@
  *    Formulario para alta para configuraciones de la subscripción
  *
  */
-include "moxy.php";
-include "data_access.inc";
-
+return 0;
+ 
 function mobbexsubscription_config_form($form, &$form_state)
 {
 
+    if (!function_exists('curl_version')) {
+        drupal_set_message(t('CURL NO INSTALADO'), 'error');
+    }
     if(isset($form_state['config'])){
         $config = $form_state['config'];
         $config['idsub'] = variable_get('mobbexsubscription_idsubs', 0);

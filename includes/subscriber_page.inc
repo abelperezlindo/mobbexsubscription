@@ -8,31 +8,49 @@
  *      Informacion de suscripción por usuarios
  * 
  */
-include "data_access.inc";
-include "moxy.php";
-function subscriber_page_form($form, &$form_state){
 
+function subscriber_page_form($form, &$form_state){
+    //status=200&sid=8N_JHkTvV
+    if(isset($_GET["status"]) && isset($_GET["sid"])){
+        //suscripcion completa
+        $welcome = $_GET["sid"];
+    }
     $apikey            = variable_get('mobbexsubscription_apikey', 0);
     $token             = variable_get('mobbexsubscription_token', 0);
     $idSubscription    = variable_get('mobbexsubscription_idsubs', 0);
     $user              = $GLOBALS['user'];
     $sub               = mobbexsubscription_entry_get($user->uid);
-    $userHasActRole    = isCurrentUserSuscriber($user);
+    $roleActSub        = user_role_load_by_name('active_subscriptor'); 
+    $userHasActRole    = user_has_role($roleActSub->rid, $user);
 
-    if(!$userHasActRole || empty($sub)) {
+    if($idSubscription !== $sub->subscription_id){
+        // Hay una discrepancia con la subscripción seteada en la 
+        //configuracion del modulo y la suscripción a la cual 
+        //pertenece este usuario. Se debe manejar este error.
+        return;
+    }
+    if(empty($sub)){
+        //El usuario nunca envio el formulario de suscripción.
         $form['Message'] = [
             '#markup' => 'No suscipto'
         ];
         return $form;
     }
-    if($idSubscription !== $sub->subscription_id){
-        $form['message'] = [
-            '#markup' => '<pre> No hay coincidencia con la suscripcion</pre>'
+    $mbx = new Moxy($apikey, $token);
+    $subData = $mbx->getSubscriber($sub->subscription_id, $sub->subscriber_id);
+
+    if(!$userHasActRole ) {
+        //el usuario realizo la suscripcion pero no tiene un medio de pago activo.
+        $link = l(
+            'aquí',
+            $subData['data']['url']
+        );
+        $form['Message'] = [
+            '#markup' => 'Debe agregar un medio de pago en '.$link.', su suscripcion será activada cuando se debite el primer periodo'
         ];
         return $form;
     }
-    $mbx = new Moxy($apikey, $token);
-    $subData = $mbx->getSubscriber($sub->subscription_id, $sub->subscriber_id);
+
 
     $form['subscriptor'] = [
         '#markup' => '<pre>'.print_r($sub, TRUE).'</pre>'

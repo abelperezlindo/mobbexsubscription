@@ -12,6 +12,7 @@
  */
 function mobbexsubscription_entry_insert($entry) {
     $return_value = NULL;
+    $transaction = db_transaction();
     try {
         $fieldkeys = array_keys($entry);
         $fieldvalues = array_values($entry);
@@ -22,6 +23,7 @@ function mobbexsubscription_entry_insert($entry) {
                         ->execute();
     }
     catch (Exception $e) {
+        $transaction->rollBack();
         drupal_set_message(t('db_insert failed. Message = %message, query= %query',
         array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
     }
@@ -37,7 +39,7 @@ function mobbexsubscription_entry_insert($entry) {
   */
 function mobbexsubscription_entry_update($entry) {
     if(!isset($entry['updated'])) $entry['updated'] = date("Y-m-d H:m:s");
-    
+    $transaction = db_transaction();
     try {
         // db_update()...->execute() returns the number of rows updated.
         $count = db_update('mobbexsubscription')
@@ -48,6 +50,7 @@ function mobbexsubscription_entry_update($entry) {
                 ->execute();
     }
     catch (Exception $e) {
+        $transaction->rollBack();
         drupal_set_message(t('db_update failed. Message = %message, query= %query',
         array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
     }
@@ -74,11 +77,37 @@ function mobbexsubscription_entry_update($entry) {
     return $result;
 }
     
-function isCurrentUserSuscriber($account = NULL){
-    if (!$account) 
-        $account = $GLOBALS['user'];
+/*
+* @param mixed $entry
+*     Array con los valores a guardar
+* @return int  
+*     The number of rows updated.
+*/
+function mobbexexecution_entry_insert($entry) {
+   $return_value = NULL;
+   $transaction = db_transaction();
+   try {
+       $fieldkeys = array_keys($entry);
+       $fieldvalues = array_values($entry);
 
-    $role = user_role_load_by_name("active_subscriptor");
-    if(empty($role)) return FALSE;
-    return isset($account->roles[$role->rid]);
+       $return_value = db_insert('mobbexexecution')
+                       ->fields($fieldkeys)
+                       ->values($fieldvalues)
+                       ->execute();
+   }
+   catch (Exception $e) {
+       $transaction->rollBack();
+       drupal_set_message(t('db_insert failed. Message = %message, query= %query',
+       array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+   }
+   return $return_value;
+}
+
+function mobbexexecution_entry_get(){
+    $result = db_select('mobbexexecution', 'mbx')
+    ->fields('mbx')
+    ->execute()
+    ->fetchAll();
+    if(empty($result)) return 0;
+    return $result;
 }

@@ -4,16 +4,17 @@
  * Module, Permissions, block
  */
 
-// Require a composer package
-require __DIR__ . '/includes/vendor/autoload.php';
+// Requeridos
+require_once __DIR__ . '/includes/moxy.php';
+require_once __DIR__ . '/includes/data_access.inc';
 
 // Archivos incluidos
 module_load_include('inc', 'mobbexsubscription', 'includes/set_config.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/webhook.inc');
-module_load_include('inc', 'mobbexsubscription', 'includes/test.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/subscriber_page.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/create_subscription.inc');
-module_load_include('inc', 'mobbexsubscription', 'includes/data_access.inc');
+module_load_include('inc', 'mobbexsubscription', 'includes/executions.inc');
+
 
 
 /**
@@ -27,6 +28,10 @@ function mobbexsubscription_init(){
  */
 function mobbexsubscription_permission(){
     return [
+        'active_subscriptor' =>  array(
+          'title' => t('Mobbex Subscription - Rol para usuario con suscripció activa'),
+          'description' => t('Permisos para acciones de suscriptores.'),
+        ),
         'acceso_configurar_mobbexsubscription' =>  array(
           'title' => t('Mobbex Subscription - Configuracion'),
           'description' => t('Permisos para acceder a configuraciones de Mobbex Subscription .'),
@@ -39,13 +44,15 @@ function mobbexsubscription_permission(){
           'title' => t('Mobbex Subscription - Crear Suscripción'),
           'description' => t('Permisos para acceder a Crear Suscripción .'),
         ),
-        'test_mobbexsubscription' =>  array(
-          'title' => t('Mobbex Subscription - TEST'),
-          'description' => t('Permisos para acceder a TEST .'),
-        ),
+
         'acceso_webhook_mobbexsubscription' =>  array(
           'title' => t('Mobbex Subscription - Webhook'),
           'description' => t('Permisos para acceder a Webhook .'),          
+        ),
+
+        'acceso_executions_mobbexsubscription' =>  array(
+          'title' => t('Mobbex Subscription - Ejecuciones'),
+          'description' => t('Permisos para acceder a Ejecuciones .'),          
         )
     ];
   }
@@ -95,6 +102,14 @@ function mobbexsubscription_permission(){
         'file' => 'includes/subscriber_page.inc',
         'expanded' => TRUE,
       ];
+      $items['admin/config/mobbexsubscription/ejecuciones'] = [
+        'title' => 'Ejecuciones',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('executions_form'),
+        'access arguments' => array('acceso_executions_mobbexsubscription'),
+        'file' => 'includes/executions.inc',
+        'expanded' => TRUE,
+      ];
       $items['mobbex/webhook'] = [
         'page callback' => 'drupal_get_form',
         'page arguments' => array('webhook_form'),
@@ -102,13 +117,7 @@ function mobbexsubscription_permission(){
         'access arguments' => array('acceso_webhook_mobbexsubscription'),
         'expanded' => TRUE,
       ];
-      $items['admin/subscripciones/test'] = [
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('test_form'),
-        'access arguments' => array('test_mobbexsubscription'),
-        'file' => 'includes/test.inc',
-        'expanded' => TRUE,
-      ];
+
       $items['admin/config/mobbexsubscription'] = [
         'title'            => 'Mobbex Subscriptions',
         'description'      => 'Seccion',
@@ -209,107 +218,46 @@ function createNewSuscriptor_validate($form,  &$form_state){}
 function createNewSuscriptor_submit($form,  &$form_state){
 
   $uid = $GLOBALS['user']->uid;
+  $isSubscribed = mobbexsubscription_entry_get($uid);
+  if($isSubscribed && $isSubscribed->status){
+    //el usuario ya esta suscripto y activo.
+    return;
+  }
+
   $apikey       = variable_get('mobbexsubscription_apikey', 0);
   $token        = variable_get('mobbexsubscription_token', 0);
   $subscription = variable_get('mobbexsubscription_idsubs', 0);
 
   if(!$apikey || !$token) return;
 
-  $request = new HTTP_Request2();
-  $request->setUrl('https://api.mobbex.com/p/subscriptions/' .$subscription. '/subscriber');
-  $request->setMethod(HTTP_Request2::METHOD_POST);
-  $request->setConfig(array(
-    'follow_redirects' => TRUE
-  ));
-  $request->setHeader(array(
-    'x-api-key'      => $apikey,
-    'x-access-token' => $token,
-    'Content-Type'   => 'application/json',
-    'Content-Type'   => 'application/json'
-  ));
-
   $data = [
     'customer' => [
         'identification'   => $form_state['values']['dni'],
         'email'            => $form_state['values']['correo'],
         'name'             => $form_state['values']['nombre'],
-        'custom_id_drupal' => $uid
+        'id_drupal' => $uid
     ],
     'test'      => 'true',
     'startDate' => [
         'day' => date('j'),
         'month' => date('n'),
     ],
-    'reference' => 'algunid'
+    'reference' =>str_pad(strval($uid), 8, '0', STR_PAD_LEFT), //el uid de drupal completado con ceros
   ];
 
-  $json = json_encode($data);
-
-
-  $request->setBody($json);
-  try {
-    $response = $request->send();
-    if ($response->getStatus() == 200) {
-      //echo $response->getBody();
-      $body = json_decode($response->getBody(), TRUE);
-      if($body['result'] == 'true'){
-        $suscriber = $body['data']['uid'];
-        drupal_set_message( 'Se creó un nuevo suscriptor '.$suscriber);
-        associateSuscriptionWithUser($body['data']);
-        changeSubcriberRoles(FALSE);
-        drupal_goto($body['data']['subscriberUrl'], array('external' => TRUE));
-      }
-      else 
-          drupal_set_massage('Ocurrio un error', 'ERROR');
-    }
-    else {
-      $message = 'Unexpected HTTP status: ' . $response->getStatus() . ' ' .$response->getReasonPhrase();
-      watchdog('mebbexsubscription', $message, array(), WATCHDOG_ERROR);
-      drupal_set_message($message);
-    }
+  $mbx = new Moxy($apikey, $token);
+  $response = $mbx->setSubscriber($subscription, $data);
+  if($response['result'] == 'true'){
+    $fields = [
+      'uid'            => $uid,
+      'subscription_id'=> $response['data']['subscription']['uid'],
+      'subscriber_id'  => $response['data']['uid'],
+      'status'         => 0,
+    ];
+    mobbexsubscription_entry_insert($fields);
   }
-  catch(HTTP_Request2_Exception $e) {
-    $message = 'Error: ' . $e->getMessage();
-    watchdog('mebbexsubscription', $message, array(), WATCHDOG_ERROR);
-    drupal_set_message($message);
-  }
-}
+  drupal_goto('mi-suscripcion');
 
-function associateSuscriptionWithUser($data = array()){
-
-  $uid = $GLOBALS['user']->uid;
-  $user = user_load($uid);
-  $subscription = [
-    LANGUAGE_NONE => [
-      '0' => [
-        'value' => $data['subscription']['uid'], 
-        'format' => '', 
-        'safe_value'=> $data['subscription']['uid'],
-      ]
-    ]
-  ];
-  $subscriber   = [
-    LANGUAGE_NONE => [
-      '0' => [
-        'value' => $data['uid'], 
-        'format' => '', 
-        'safe_value'=> $data['uid'],
-      ]
-    ]
-  ];
-  $subscriber_url   = [
-    LANGUAGE_NONE => [
-      '0' => [
-        'value' => $data['subscriberUrl'], 
-        'format' => '', 
-        'safe_value'=> $data['subscriberUrl'],
-      ]
-    ]
-  ];
-  $user->field_mobbex_subscription_uid = $subscription;
-  $user->field_mobbex_subscriber_uid   = $subscriber;
-  $user->field_mobbex_subscriber_url  = $subscriber_url;
-  user_save($user); 
 }
 
 /**
@@ -317,62 +265,28 @@ function associateSuscriptionWithUser($data = array()){
  * @param bool $isActive
  *    Estado al que pasara el usuario actual representado por un rol
  */
-function changeSubcriberRoles($isActive){
-  $uid = $GLOBALS['user']->uid;
 
-  if($isActive){
-    custom_remove_role_from_user($uid, 'inactive_subscriptor');
-    $user = user_load($uid);
-    $role = user_role_load_by_name('active_subscriptor');
-    $new_roles = $user->roles + array($role->rid => $role->name);
-  }else{
-    custom_remove_role_from_user($uid, 'active_subscriptor');
-    $user = user_load($uid);
-    $role = user_role_load_by_name('inactive_subscriptor');
+function activeSubscriptionRole($uid, $state){
+
+  $user = user_load($uid);
+  $role = user_role_load_by_name('active_subscriptor');
+  if(empty($role)) return 0;//no existe el rol en el sistema 
+
+  if($state)
+  {
+    //agregamos el rol al array de roles del usuario
     $new_roles = $user->roles + array($role->rid => $role->name);
   }
-  user_save($user, ['roles'=> $new_roles]);
-}
-/**
- * Remove a role from a user.
- *
- * @param $user
- *   User object or user ID.
- * @param $role_name
- *   String value of role to be removed.
- */
-function custom_remove_role_from_user($user, $role_name) {
-  // For convenience, we'll allow user ids as well as full user objects.
-  if (is_numeric($user)) {
-    $user = user_load($user);
-  }
-  // Only remove the role if the user already has it.
-  $key = array_search($role_name, $user->roles);
-  if ($key == TRUE) {
-    // Get the rid from the roles table.
-    $roles = user_roles(TRUE);
-    $rid = array_search($role_name, $roles);
-    if ($rid != FALSE) {
-      // Make a copy of the roles array, without the deleted one.
-      $new_roles = array();
-      foreach($user->roles as $id => $name) {
-        if ($id != $rid) {
-          $new_roles[$id] = $name;
-        }
-      }
-      user_save($user, array('roles' => $new_roles));
+  else
+  {
+    //creamos un nuevo array de roles para el usuario sin el rol 'active_subscriptor'
+    $new_roles = [];
+    foreach($user->roles as $id => $name) {
+      if ($id != $role->rid ) 
+        $new_roles[$id] = $name;
     }
   }
-}
-/**
- * Implements hook_preprocess_user_profile()
- *    Deja invisible fields 
- */
-function mobbexsubscription_preprocess_user_profile(&$vars) {
-  $current_user = user_uid_optional_load();
-  if($current_user->uid != 1) {
-    unset($vars['user_profile']['field_mobbex_subscription_uid']);
-    unset($vars['user_profile']['field_mobbex_subscriber_uid']);
-    unset($vars['user_profile']['field_mobbex_subscriber_url']);
-  }
+  user_save($user, ['roles'=> $new_roles]);
+  return 1;
+
 }

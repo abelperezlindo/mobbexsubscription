@@ -4,7 +4,6 @@
  * Obtiene la llamada desde Mobbex
  */
 
-include "data_access.inc";
  // Query params from POST.
 
 /**
@@ -12,338 +11,151 @@ include "data_access.inc";
  *      Formulario caprura json (prox retirar form)
  */
 function webhook_form($form, &$form_state){
-    $postdata = file_get_contents("php://input");
-    //$obj = rawurldecode($postdata);
-    $obj = array();    
-    parse_str($postdata, $obj);
-    if(empty($obj)){
-        watchdog("debug", 'Empty request to mobbex webhook');
-        return [];
-    }else{
-        watchdog("debug", '<pre> parse_str() : <br />'. print_r( $obj, true) . '</pre>');
+    $wh = new MoxyWebhook();
+    #MoxyWebhook
+    //Vemos si se recibio contenido
+    if(!$wh->getPostString()) return;
+
+    $type   = $wh->getPostArray('type');
+    $data   = $wh->getPostArray('data');
+
+    if( $type == 'subscription:registration' ||  $type == 'subscription:source_change'){
+        // Ocurre un nuevo registro en nuestra suscripcion
+        // O
+        // Un suscriptor cambia su metodo de pago
+        if($data['result'] != "true") return;
+        //"reference" y "id_drupal" guardan el id de usuario en nuestro aplicativo
+        if(isset($data['subscriber']['customer']['id_drupal'])){
+            $uidFromMobbex = $data['subscriber']['customer']['id_drupal'];
+        }
+        elseif(isset($data['suscriber']['reference'])){
+            $uidFromMobbex = intval(isset($data['suscriber']['reference']));
+        }
+        $user = user_load($uidFromMobbex);
+        //manejamos el error de usuario no encontrado
+        if(!isset($user)) return;
+        $estado = $data['payment']['status']['code'];
+        if($estado == "200" || $estado == "602"){
+            //Estado 200 = Paga, mensage "aprobada"
+            //Estado 602 = Devuelto, mensaje "Transacción Aprobada" (cambio de m p)
+            $entry = mobbexsubscription_entry_get($user->uid);
+            if(!$entry->status){
+                $fields = [
+                    'uid'            => $entry->uid,
+                    'subscription_id'=> $entry->subscription_id,
+                    'subscriber_id'  => $entry->subscriber_id,
+                    'status'         => 1,
+                  ];
+                  mobbexsubscription_entry_update($fields);
+            }
+            if(!array_search('active_subscriptor', $user->roles)){
+                //ponemos el rol de suscriptor activo
+                activeSubscriptionRole($user->uid, TRUE);
+            }
+        }
+        return;
     }
 
-    
-   // $obj = $postdata;
-
-    return $form;
-}
-/**
- *  Recibe post data de mobbex y realiza el procesamiento requerido para el tipo
- * @param mixed $obj
- *      post data
- */
-function manageWebhookRequest($obj){
-    switch($obj['type']){
-        case "subscription:registration" : 
-            
-            /*
-             {
-                    "type": "subscription:registration",
-                    "data": {
-                        "payment": {
-                            "id": "rkWpX3YU6x",
-                            "operation": {
-                                "type": "payment"
-                            },
-                            "status": {
-                                "code": "200",
-                                "text": "Paid",
-                                "message": "APROBADA"
-                            },
-                            "total": 1907.5,
-                            "currency": {
-                                "code": "ARS",
-                                "text": "Peso Argentino"
-                            },
-                            "currency_data": {
-                                "value": "ARS",
-                                "label": "Peso Argentino",
-                                "symbol": "$",
-                                "hidden": false
-                            },
-                            "source": {
-                                "name": "Visa",
-                                "type": "card",
-                                "number": "454642xxxxxx7787",
-                                "installment": {
-                                    "description": "1 Cuotas",
-                                    "amount": 500,
-                                    "count": 1
-                                }
-                            },
-                            "user": {
-                                "name": "Juan Batman",
-                                "email": "soybatman@gmail.com"
-                            },
-                            "reference": "HyjdiK8Tx"
-                        },
-                        "subscription": {
-                            "uid": "JmfI3Ml3D",
-                            "interval": "1m",
-                            "limit": 0,
-                            "name": "Nombre de la Suscripción",
-                            "description": "Descripción de la Suscripción",
-                            "total": 500
-                        },
-                        "subscriber": {
-                            "uid": "qy82noStM",
-                            "reference": "qy82noStM",
-                            "customer": {
-                                "name": "Juan Batman",
-                                "identification": "999999",
-                                "email": "soybatman@gmail.com"
-                            }
-                        }
-                    }
-                }
-             */
-            //nueva suscripción
+    if($type == 'subscription:subscriber:suspended'){
+        //Se suspendio a un suscriptor
+        if(isset($data['subscriber']['customer']['id_drupal'])){
+            $uidFromMobbex = $data['subscriber']['customer']['id_drupal'];
+        }
+        elseif(isset($data['suscriber']['reference'])){
+            $uidFromMobbex = intval(isset($data['suscriber']['reference']));
+        }
+        $user = user_load($uidFromMobbex);
+        $entry = mobbexsubscription_entry_get($user->uid);
+        if($entry->status){
+            //Si esta activo en nuestra tabla lo pasamos a inactivo
             $fields = [
-                'uid'            => 4,
-                'subscription_id'=> 2,
-                'subscriber_id'  => 3,
-                'status'         => 1,
-                'source'         => 'card',
-                'uptodatepay'    => 1
-            ];
-            mobbexsubscription_entry_insert($fields);
-            
-        break;
-
-        // SEPARADOR AUX //
-
-        case "subscription:source_change" :
-            /*
-            {
-                "type": "subscription:source_change",
-                "data": {
-                    "payment": {
-                        "id": "rkWpX3YU6x",
-                        "operation": {
-                            "type": "payment"
-                        },
-                        "status": {
-                            "code": "200",
-                            "text": "Paid",
-                            "message": "APROBADA"
-                        },
-                        "total": 1907.5,
-                        "currency": {
-                            "code": "ARS",
-                            "text": "Peso Argentino"
-                        },
-                        "currency_data": {
-                            "value": "ARS",
-                            "label": "Peso Argentino",
-                            "symbol": "$",
-                            "hidden": false
-                        },
-                        "source": {
-                            "name": "Visa",
-                            "type": "card",
-                            "number": "454642xxxxxx7787",
-                            "installment": {
-                                "description": "1 Cuotas",
-                                "amount": 500,
-                                "count": 1
-                            }
-                        },
-                        "user": {
-                            "name": "Juan Batman",
-                            "email": "soybatman@gmail.com"
-                        },
-                        "reference": "HyjdiK8Tx"
-                    },
-                    "subscription": {
-                        "uid": "JmfI3Ml3D",
-                        "interval": "1m",
-                        "limit": 0,
-                        "name": "Nombre de la Suscripción",
-                        "description": "Descripción de la Suscripción",
-                        "total": 500
-                    },
-                    "subscriber": {
-                        "uid": "qy82noStM",
-                        "reference": "qy82noStM",
-                        "customer": {
-                            "name": "Juan Batman",
-                            "identification": "999999",
-                            "email": "soybatman@gmail.com"
-                        }
-                    }
-                }
-            }
-            */
-            //Cambio de Método de Pago
+                'uid'            => $entry->uid,
+                'subscription_id'=> $entry->subscription_id,
+                'subscriber_id'  => $entry->subscriber_id,
+                'status'         => 0,
+                ];
+                mobbexsubscription_entry_update($fields);
+        }
+        if(array_search('active_subscriptor', $user->roles)){
+            //sacamos el rol de suscriptor activo
+            activeSubscriptionRole($user->uid, FALSE);
+        }
+        return;
+    }
+    if($type == 'subscription:subscriber:active'){
+        //Se activo a un suscriptor
+        if(isset($data['subscriber']['customer']['id_drupal'])){
+            $uidFromMobbex = $data['subscriber']['customer']['id_drupal'];
+        }
+        elseif(isset($data['suscriber']['reference'])){
+            $uidFromMobbex = intval(isset($data['suscriber']['reference']));
+        }
+        $user = user_load($uidFromMobbex);
+        $entry = mobbexsubscription_entry_get($user->uid);
+        if(empty($entry->status)){
+            //Si esta activo en nuestra tabla lo pasamos a inactivo
             $fields = [
-                'uid'            => 4,
-                'subscription_id'=> 2,
-                'subscriber_id'  => 3,
+                'uid'            => $entry->uid,
+                'subscription_id'=> $entry->subscription_id,
+                'subscriber_id'  => $entry->subscriber_id,
                 'status'         => 1,
-                'source'         => 'card',
-                'uptodatepay'    => 1
-            ];
-            mobbexsubscription_entry_update($fields);
-        break;
-
-        // SEPARADOR AUX //
-
-
-        case "subscription:execution" : 
-            //Suscripción Ejecutada
-
-            /*
-            {
-                "type": "subscription:execution",
-                "data": {
-                    "result": true,
-                    "payment": {
-                        "id": "rkWpX3YU6x",
-                        "operation": {
-                            "type": "payment"
-                        },
-                        "status": {
-                            "code": "200",
-                            "text": "Paid",
-                            "message": "APROBADA"
-                        },
-                        "total": 1907.5,
-                        "currency": {
-                            "code": "ARS",
-                            "text": "Peso Argentino"
-                        },
-                        "currency_data": {
-                            "value": "ARS",
-                            "label": "Peso Argentino",
-                            "symbol": "$",
-                            "hidden": false
-                        },
-                        "source": {
-                            "name": "Visa",
-                            "type": "card",
-                            "number": "454642xxxxxx7787",
-                            "installment": {
-                                "description": "1 Cuotas",
-                                "amount": 500,
-                                "count": 1
-                            }
-                        },
-                        "user": {
-                            "name": "Juan Batman",
-                            "email": "soybatman@gmail.com"
-                        },
-                        "reference": "HyjdiK8Tx"
-                    },
-                    "subscription": {
-                        "uid": "JmfI3Ml3D",
-                        "interval": "1m",
-                        "limit": 0,
-                        "name": "Nombre de la Suscripción",
-                        "description": "Descripción de la Suscripción",
-                        "total": 500
-                    },
-                    "subscriber": {
-                        "uid": "qy82noStM",
-                        "reference": "qy82noStM",
-                        "period": 3,
-                        "customer": {
-                            "name": "Juan Batman",
-                            "identification": "999999",
-                            "email": "soybatman@gmail.com"
-                        }
-                    }
-                }
-            }
-            */
-
-            #comprobamos si la transaccion afecta al estado actual de un suscriptor
-
-        break;
-
-        // SEPARADOR AUX //
-
-
-        case "subscription:subscriber:suspended" : 
-            //Suscriptor Suspendido
-
-            /*
-            {
-                "type": "subscription:subscriber:suspended",
-                "data": {
-                    "subscription": {
-                        "uid": "JmfI3Ml3D",
-                        "interval": "1m",
-                        "limit": 0,
-                        "name": "Nombre de la Suscripción",
-                        "description": "Descripción de la Suscripción",
-                        "total": 500
-                    },
-                    "subscriber": {
-                        "uid": "qy82noStM",
-                        "reference": "qy82noStM",
-                        "customer": {
-                            "name": "Juan Batman",
-                            "identification": "999999",
-                            "email": "soybatman@gmail.com"
-                        }
-                    }
-                }
-            }
-            */
-            $fields = [
-                'uid'            => 4,
-                'subscription_id'=> 2,
-                'subscriber_id'  => 3,
-                'status'         => 1,
-                'source'         => 'card',
-                'uptodatepay'    => 1
-            ];
-            mobbexsubscription_entry_update($fields);
-        break;
-
-
-        // SEPARADOR AUX //
-
-
-
-        case "subscription:subscriber:active" : 
-            //Suscriptor Activado
-
-            /*
-            {
-                "type": "subscription:subscriber:active",
-                "data": {
-                    "subscription": {
-                        "uid": "JmfI3Ml3D",
-                        "interval": "1m",
-                        "limit": 0,
-                        "name": "Nombre de la Suscripción",
-                        "description": "Descripción de la Suscripción",
-                        "total": 500
-                    },
-                    "subscriber": {
-                        "uid": "qy82noStM",
-                        "reference": "qy82noStM",
-                        "customer": {
-                            "name": "Juan Batman",
-                            "identification": "999999",
-                            "email": "soybatman@gmail.com"
-                        }
-                    }
-                }
-            }
-            */
-            $fields = [
-                'uid'            => 4,
-                'subscription_id'=> 2,
-                'subscriber_id'  => 3,
-                'status'         => 1,
-                'source'         => 'card',
-                'uptodatepay'    => 1
-            ];
-            mobbexsubscription_entry_update($fields);
-        break;
+                ];
+                mobbexsubscription_entry_update($fields);
+        }
+        if(!array_search('active_subscriptor', $user->roles)){
+            //ponemos el rol de suscriptor activo
+            activeSubscriptionRole($user->uid, TRUE);
+        }
+        return;
     }
 
+    if( $type == 'subscription:execution'){
+        // Si la suscripcion es Dinamica se realizaran las ejecuciones automaticamente 
+        // según la agenda.
+        if($data['result'] != "true") return;
+        //"reference" y "id_drupal" guardan el id de usuario en nuestro aplicativo
+        if(isset($data['subscriber']['customer']['id_drupal'])){
+            $uidFromMobbex = $data['subscriber']['customer']['id_drupal'];
+        }
+        elseif(isset($data['suscriber']['reference'])){
+            $uidFromMobbex = intval(isset($data['suscriber']['reference']));
+        }
+        $user = user_load($uidFromMobbex);
+        //manejamos el error de usuario no encontrado
+        if(!isset($user)) return;
+        $estado = $data['payment']['status']['code'];
+        if($estado == "200"){
+            //Estado 200 = Paga, mensage "aprobada"
+            $entry = mobbexsubscription_entry_get($user->uid);
+            if(empty($entry)) return; 
+            // si no lo tenemos en la tabla de las suscripciones
+            // el usuario no se registro desde nuesta applic
+            if(!$entry->status){
+                $fields = [
+                    'uid'            => $entry->uid,
+                    'subscription_id'=> $entry->subscription_id,
+                    'subscriber_id'  => $entry->subscriber_id,
+                    'status'         => 1,
+                  ];
+                  mobbexsubscription_entry_update($fields);
+            }
+            if(!array_search('active_subscriptor', $user->roles)){
+                //ponemos el rol de suscriptor activo
+                activeSubscriptionRole($user->uid, TRUE);
+            }
+            //guardamos la ejecucion y el monto en db
+            $fields = [
+                    'uid'            => $uidFromMobbex,
+                    'subscription_id'=> $data['subscription']['uid'],
+                    'subscriber_id'  => $data['subscriber']['uid'],
+                    'description'    => $data['payment']['description'],
+                    'status'         => $data['payment']['status']['text'],
+                    'total'          => $data['payment']['total'],
+                    'datetime'       => date( "Y-m-d H:i:s", strtotime($data['payment']['created']) ),
+                    'reference'      => $data['payment']['reference'],
+            ];
+            mobbexexecution_entry_insert($fields);
+        }
+        return;
+    }
 }
