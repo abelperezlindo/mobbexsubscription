@@ -71,22 +71,38 @@ function mobbexsubscription_entry_update($entry)
  * @return mixed
  *     respuesta o cero.
  */
-function mobbexsubscription_entry_get($uid = 0)
+function mobbexsubscription_entry_get($uid)
 {
-    $result = db_select('mobbexsubscription', 'mbx');
-    $result->fields('mbx');
-
-    if (!empty($uid))
-        $result->condition('uid', $uid, '=');
-
-    $result->execute();
-    $result->fetchAll();
+    $result = db_select('mobbexsubscription', 'mbx')
+        ->fields('mbx')
+        ->condition('uid', $uid, '=')
+        ->execute()
+        ->fetchAll();
 
     if (empty($result)) return 0;
     if (count($result) == 1) return $result[0];
     return $result;
 }
+/**
+ * Obtiene un registro en la base de datos, o todos lo s que coinsidan con
+ * el user id.
+ *
+ * @param int $uid
+ *     Id de usuario drupal
+ * @return mixed
+ *     respuesta o cero.
+ */
+function mobbexsubscription_entry_getall()
+{
+    $result = db_select('mobbexsubscription', 'mbx')
+        ->fields('mbx')
+        ->execute()
+        ->fetchAll();
 
+    if (empty($result)) return 0;
+    if (count($result) == 1) return $result[0];
+    return $result;
+}
 /*
 * @param mixed $entry
 *     Array con los valores a guardar
