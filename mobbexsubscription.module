@@ -225,9 +225,10 @@ function createNewSuscriptor_submit($form,  &$form_state)
 
   $uid = $GLOBALS['user']->uid;
   $isSubscribed = mobbexsubscription_entry_get($uid);
-  if ($isSubscribed && $isSubscribed->status) {
-    //el usuario ya esta suscripto y activo.
+
+  if (is_object($isSubscribed)) {
     return;
+    // el usuario ya se registro, no importa si la suscripcion eta inactiva
   }
 
   $apikey       = variable_get('mobbexsubscription_apikey', 0);
