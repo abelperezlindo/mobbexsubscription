@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Contiene un formulario.
@@ -9,8 +10,16 @@
  * 
  */
 
-function create_subscription_form($form, &$form_state){
+function create_subscription_form($form, &$form_state)
+{
     global $base_url;
+    $apikey = variable_get('mobbexsubscription_apikey', 0);
+    $token  = variable_get('mobbexsubscription_token', 0);
+
+    if (empty($apikey) || empty($token)) return [
+        '#markup' => t('El modulo de suscripciones no esta configurado correctamente.'),
+    ];
+
     $form['name'] = [
         '#type'          => 'textfield',
         '#title'         => t('Nombre'),
@@ -44,7 +53,7 @@ function create_subscription_form($form, &$form_state){
         '#description'   => t('Cantidadd de Periodos de Prueba.'),
         '#default_value' => '0',
         '#required'      => TRUE,
-    ]; 
+    ];
     $form['limit'] = [
         '#type'          => 'textfield',
         '#title'         => t('Duración limite'),
@@ -71,14 +80,14 @@ function create_subscription_form($form, &$form_state){
         '#title'         => t('WebHook'),
         '#description'   => t('URL en la que se recibirán las notificaciones via POST. Debe ser HTTPs.'),
         '#required'      => TRUE,
-        '#default_value' => $base_url.'/mobbex/webhook',
+        '#default_value' => $base_url . '/mobbex/webhook',
     ];
     $form['return_url'] = [
         '#type'          => 'textfield',
         '#title'         => t('Url de returno'),
         '#description'   => t('URL a la que se enviará al usuario una vez suscripto. Debe ser HTTPs.'),
         '#required'      => TRUE,
-        '#default_value' => $base_url.'/mi-suscripcion',
+        '#default_value' => $base_url . '/mi-suscripcion',
     ];
     $form['confirm'] = [
         '#type'          => 'submit',
@@ -93,7 +102,8 @@ function create_subscription_form($form, &$form_state){
 /**
  * Validación del Formulario
  */
-function confirmNewSubscription_validate($form, &$form_state){
+function confirmNewSubscription_validate($form, &$form_state)
+{
     if (empty($form_state['values']['name'])) {
         form_set_error('name', t('Campo obligatorio'));
     }
@@ -122,14 +132,15 @@ function confirmNewSubscription_validate($form, &$form_state){
 /**
  * Envío del formulario.
  */
-function confirmNewSubscription_submit($form, &$form_state){
+function confirmNewSubscription_submit($form, &$form_state)
+{
 
-    
+
     $apikey = variable_get('mobbexsubscription_apikey', 0);
     $token  = variable_get('mobbexsubscription_token', 0);
 
-    if(!$apikey || !$token) return;
- 
+    if (!$apikey || !$token) return;
+
     $data = [
         'name'          => $form_state['values']['name'],
         'description'   => $form_state['values']['description'],
@@ -144,10 +155,9 @@ function confirmNewSubscription_submit($form, &$form_state){
     ];
     $mbx  = new Moxy($apikey, $token);
     $body = $mbx->setNewSuscription($data);
-    
-    if($body['result'] == 'true')
-        drupal_set_message( 'Se creó la suscripcion '.$body['data']['uid']);
-    else 
+
+    if ($body['result'] == 'true')
+        drupal_set_message('Se creó la suscripcion ' . $body['data']['uid']);
+    else
         drupal_set_massage('Ocurrio un error', 'ERROR');
-    
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Module, Permissions, block
@@ -18,119 +19,122 @@ module_load_include('inc', 'mobbexsubscription', 'includes/executions.inc');
 
 
 /**
-* @method implementa hook_init e inicializa el modulo
-*/
-function mobbexsubscription_init(){
-
+ * @method implementa hook_init e inicializa el modulo
+ */
+function mobbexsubscription_init()
+{
 }
 /**
  * Implements hook_permission
  */
-function mobbexsubscription_permission(){
-    return [
-        'active_subscriptor' =>  array(
-          'title' => t('Mobbex Subscription - Rol para usuario con suscripció activa'),
-          'description' => t('Permisos para acciones de suscriptores.'),
-        ),
-        'acceso_configurar_mobbexsubscription' =>  array(
-          'title' => t('Mobbex Subscription - Configuracion'),
-          'description' => t('Permisos para acceder a configuraciones de Mobbex Subscription .'),
-        ),
-        'acceso_mi_suscripcion_mobbexsubscription' =>  array(
-          'title' => t('Mobbex Subscription - Mi Suscripción'),
-          'description' => t('Permisos para acceder a Mi Suscripción .'),
-        ),
-        'acceso_create_subscription_mobbexsubscription' =>  array(
-          'title' => t('Mobbex Subscription - Crear Suscripción'),
-          'description' => t('Permisos para acceder a Crear Suscripción .'),
-        ),
+function mobbexsubscription_permission()
+{
+  return [
+    'active_subscriptor' =>  array(
+      'title' => t('Mobbex Subscription - Rol para usuario con suscripció activa'),
+      'description' => t('Permisos para acciones de suscriptores.'),
+    ),
+    'acceso_configurar_mobbexsubscription' =>  array(
+      'title' => t('Mobbex Subscription - Configuracion'),
+      'description' => t('Permisos para acceder a configuraciones de Mobbex Subscription .'),
+    ),
+    'acceso_mi_suscripcion_mobbexsubscription' =>  array(
+      'title' => t('Mobbex Subscription - Mi Suscripción'),
+      'description' => t('Permisos para acceder a Mi Suscripción .'),
+    ),
+    'acceso_create_subscription_mobbexsubscription' =>  array(
+      'title' => t('Mobbex Subscription - Crear Suscripción'),
+      'description' => t('Permisos para acceder a Crear Suscripción .'),
+    ),
 
-        'acceso_webhook_mobbexsubscription' =>  array(
-          'title' => t('Mobbex Subscription - Webhook'),
-          'description' => t('Permisos para acceder a Webhook .'),          
-        ),
+    'acceso_webhook_mobbexsubscription' =>  array(
+      'title' => t('Mobbex Subscription - Webhook'),
+      'description' => t('Permisos para acceder a Webhook .'),
+    ),
 
-        'acceso_executions_mobbexsubscription' =>  array(
-          'title' => t('Mobbex Subscription - Ejecuciones'),
-          'description' => t('Permisos para acceder a Ejecuciones .'),          
-        )
-    ];
-  }
-  //test_mobbexsubscription
-  
-  /**
-  * @method implementa hook_help y muestra la ayuda de configuración y uso del modulo
-  */
-  function mobbexsubscription_help($path, $arg){
-    switch ($path) {
-      case 'mobbexsubscription/manage':
-        // Help text for the simple page registered for this path.
-        return t('This section displays the list of Pages.');
-    }
-  }
-  
-  /**
-  * @method implementa hook_menu y define los items de menu del modulo
-  */
-  
-  function mobbexsubscription_menu()
-  {
-      $items = array();
-  
-      /*------ ITEMS DE MENU PARA MODULO -------*/
-      $items['admin/config/mobbexsubscription/configurar'] = [
-        'title' => 'Configuración',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('mobbexsubscription_config_form'),
-        'access arguments' => array('acceso_configurar_mobbexsubscription'),
-        'file' => 'includes/set_config.inc',
-        'expanded' => TRUE,
-      ];
-      $items['admin/config/mobbexsubscription/nueva-suscripcion'] = [
-        'title' => 'Crear Suscripción',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('create_subscription_form'),
-        'access arguments' => array('acceso_create_subscription_mobbexsubscription'),
-        'file' => 'includes/create_subscription.inc',
-        'expanded' => TRUE,
-      ];
-      $items['mi-suscripcion'] = [
-        'title' => 'Mi Suscripción',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('subscriber_page_form'),
-        'access arguments' => array('acceso_mi_suscripcion_mobbexsubscription'),
-        'file' => 'includes/subscriber_page.inc',
-        'expanded' => TRUE,
-      ];
-      $items['admin/config/mobbexsubscription/ejecuciones'] = [
-        'title' => 'Ejecuciones',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('executions_form'),
-        'access arguments' => array('acceso_executions_mobbexsubscription'),
-        'file' => 'includes/executions.inc',
-        'expanded' => TRUE,
-      ];
-      $items['mobbex/webhook'] = [
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('webhook_form'),
-        'file' => 'includes/webhook.inc',
-        'access arguments' => array('acceso_webhook_mobbexsubscription'),
-        'expanded' => TRUE,
-      ];
+    'acceso_executions_mobbexsubscription' =>  array(
+      'title' => t('Mobbex Subscription - Ejecuciones'),
+      'description' => t('Permisos para acceder a Ejecuciones .'),
+    )
+  ];
+}
+//test_mobbexsubscription
 
-      $items['admin/config/mobbexsubscription'] = [
-        'title'            => 'Mobbex Subscriptions',
-        'description'      => 'Seccion',
-        'page callback'    => 'mobbexsubscription_config_form',
-        'access arguments' => ['acceso_configurar_mobbexsubscription'],
-      ];
-    return $items;
+/**
+ * @method implementa hook_help y muestra la ayuda de configuración y uso del modulo
+ */
+function mobbexsubscription_help($path, $arg)
+{
+  switch ($path) {
+    case 'mobbexsubscription/manage':
+      // Help text for the simple page registered for this path.
+      return t('This section displays the list of Pages.');
   }
-  
+}
+
+/**
+ * @method implementa hook_menu y define los items de menu del modulo
+ */
+
+function mobbexsubscription_menu()
+{
+  $items = array();
+
+  /*------ ITEMS DE MENU PARA MODULO -------*/
+  $items['admin/config/mobbexsubscription/configurar'] = [
+    'title' => 'Configuración',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mobbexsubscription_config_form'),
+    'access arguments' => array('acceso_configurar_mobbexsubscription'),
+    'file' => 'includes/set_config.inc',
+    'expanded' => TRUE,
+  ];
+  $items['admin/config/mobbexsubscription/nueva-suscripcion'] = [
+    'title' => 'Crear Suscripción',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('create_subscription_form'),
+    'access arguments' => array('acceso_create_subscription_mobbexsubscription'),
+    'file' => 'includes/create_subscription.inc',
+    'expanded' => TRUE,
+  ];
+  $items['mi-suscripcion'] = [
+    'title' => 'Mi Suscripción',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('subscriber_page_form'),
+    'access arguments' => array('acceso_mi_suscripcion_mobbexsubscription'),
+    'file' => 'includes/subscriber_page.inc',
+    'expanded' => TRUE,
+  ];
+  $items['admin/config/mobbexsubscription/ejecuciones'] = [
+    'title' => 'Ejecuciones',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('executions_form'),
+    'access arguments' => array('acceso_executions_mobbexsubscription'),
+    'file' => 'includes/executions.inc',
+    'expanded' => TRUE,
+  ];
+  $items['mobbex/webhook'] = [
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webhook_form'),
+    'file' => 'includes/webhook.inc',
+    'access arguments' => array('acceso_webhook_mobbexsubscription'),
+    'expanded' => TRUE,
+  ];
+
+  $items['admin/config/mobbexsubscription'] = [
+    'title'            => 'Mobbex Subscriptions',
+    'description'      => 'Seccion',
+    'page callback'    => 'mobbexsubscription_config_form',
+    'access arguments' => ['acceso_configurar_mobbexsubscription'],
+  ];
+  return $items;
+}
+
 /**
  *  Implements hook_block_info()
  */
-function mobbexsubscription_block_info() {
+function mobbexsubscription_block_info()
+{
 
   $blocks['boton_de_suscripcion'] = [
     // info: The name of the block.
@@ -146,17 +150,14 @@ function mobbexsubscription_block_info() {
  *
  * This hook generates the contents of the blocks themselves.
  */
-function mobbexsubscription_block_view($delta = '') {
+function mobbexsubscription_block_view($delta = '')
+{
   // The $delta parameter tells us which block is being requested.
   switch ($delta) {
     case 'boton_de_suscripcion':
       $block['subject'] = t('Suscribirse');
       $user = $GLOBALS['user'];
-      $isActive = array_search('active_subscriptor', $user->roles);
-      $isInactive = array_search('inactive_subscriptor', $user->roles);
-      if($isActive || $isInactive){
-        $block['content'] = mobbexsubscription_contents($delta);
-      }else{
+      if (!array_search('active_subscriptor', $user->roles)) {
         $block['content'] = drupal_get_form('createNewSuscriptor_form');
       }
       break;
@@ -167,7 +168,8 @@ function mobbexsubscription_block_view($delta = '') {
 /**
  * A module-defined block content function.
  */
-function mobbexsubscription_contents($which_block) {
+function mobbexsubscription_contents($which_block)
+{
   switch ($which_block) {
     case 'boton_de_suscripcion':
       $link = l(
@@ -184,42 +186,46 @@ function mobbexsubscription_contents($which_block) {
  * Implements hook_form().
  *    Formulario auxiliar para la prueba de la suscripcion de un usuario
  */
-function createNewSuscriptor_form($form,  &$form_state){
+function createNewSuscriptor_form($form,  &$form_state)
+{
 
-$form['dni'] = [
-  '#type'        => 'textfield',
-  '#title'       => t('DNI'),
-  '#description' => t('DNI'),
-  '#required'    => TRUE,
-];
-$form['nombre'] = [
-  '#type'        => 'textfield',
-  '#title'       => t('Nombre'),
-  '#description' => t('nombre'),
-  '#required'    => TRUE,
-];
-$form['correo'] = [
-  '#type'        => 'textfield',
-  '#title'       => t('correo'),
-  '#description' => t('correo'),
-  '#required'    => TRUE,
-];
-$form['confirm'] = [
+  $form['dni'] = [
+    '#type'        => 'textfield',
+    '#title'       => t('DNI'),
+    '#description' => t('DNI'),
+    '#required'    => TRUE,
+  ];
+  $form['nombre'] = [
+    '#type'        => 'textfield',
+    '#title'       => t('Nombre'),
+    '#description' => t('nombre'),
+    '#required'    => TRUE,
+  ];
+  $form['correo'] = [
+    '#type'        => 'textfield',
+    '#title'       => t('correo'),
+    '#description' => t('correo'),
+    '#required'    => TRUE,
+  ];
+  $form['confirm'] = [
     '#type'     => 'submit',
     '#name'     => 'confirmNewSubscription',
     '#value'    => t('Confirmar'),
     '#validate' => ['createNewSuscriptor_validate'],
     '#submit'   => ['createNewSuscriptor_submit'],
-];
+  ];
 
-return $form;
+  return $form;
 }
-function createNewSuscriptor_validate($form,  &$form_state){}
-function createNewSuscriptor_submit($form,  &$form_state){
+function createNewSuscriptor_validate($form,  &$form_state)
+{
+}
+function createNewSuscriptor_submit($form,  &$form_state)
+{
 
   $uid = $GLOBALS['user']->uid;
   $isSubscribed = mobbexsubscription_entry_get($uid);
-  if($isSubscribed && $isSubscribed->status){
+  if ($isSubscribed && $isSubscribed->status) {
     //el usuario ya esta suscripto y activo.
     return;
   }
@@ -228,36 +234,35 @@ function createNewSuscriptor_submit($form,  &$form_state){
   $token        = variable_get('mobbexsubscription_token', 0);
   $subscription = variable_get('mobbexsubscription_idsubs', 0);
 
-  if(!$apikey || !$token) return;
+  if (!$apikey || !$token) return;
 
   $data = [
     'customer' => [
-        'identification'   => $form_state['values']['dni'],
-        'email'            => $form_state['values']['correo'],
-        'name'             => $form_state['values']['nombre'],
-        'id_drupal' => $uid
+      'identification'   => $form_state['values']['dni'],
+      'email'            => $form_state['values']['correo'],
+      'name'             => $form_state['values']['nombre'],
+      'id_drupal' => $uid
     ],
     'test'      => 'true',
     'startDate' => [
-        'day' => date('j'),
-        'month' => date('n'),
+      'day' => date('j'),
+      'month' => date('n'),
     ],
-    'reference' =>str_pad(strval($uid), 8, '0', STR_PAD_LEFT), //el uid de drupal completado con ceros
+    'reference' => str_pad(strval($uid), 8, '0', STR_PAD_LEFT), //el uid de drupal completado con ceros
   ];
 
   $mbx = new Moxy($apikey, $token);
   $response = $mbx->setSubscriber($subscription, $data);
-  if($response['result'] == 'true'){
+  if ($response['result'] == 'true') {
     $fields = [
       'uid'            => $uid,
-      'subscription_id'=> $response['data']['subscription']['uid'],
+      'subscription_id' => $response['data']['subscription']['uid'],
       'subscriber_id'  => $response['data']['uid'],
       'status'         => 0,
     ];
     mobbexsubscription_entry_insert($fields);
   }
   drupal_goto('mi-suscripcion');
-
 }
 
 /**
@@ -266,27 +271,24 @@ function createNewSuscriptor_submit($form,  &$form_state){
  *    Estado al que pasara el usuario actual representado por un rol
  */
 
-function activeSubscriptionRole($uid, $state){
+function activeSubscriptionRole($uid, $state)
+{
 
   $user = user_load($uid);
   $role = user_role_load_by_name('active_subscriptor');
-  if(empty($role)) return 0;//no existe el rol en el sistema 
+  if (empty($role)) return 0; //no existe el rol en el sistema 
 
-  if($state)
-  {
+  if ($state) {
     //agregamos el rol al array de roles del usuario
     $new_roles = $user->roles + array($role->rid => $role->name);
-  }
-  else
-  {
+  } else {
     //creamos un nuevo array de roles para el usuario sin el rol 'active_subscriptor'
     $new_roles = [];
-    foreach($user->roles as $id => $name) {
-      if ($id != $role->rid ) 
+    foreach ($user->roles as $id => $name) {
+      if ($id != $role->rid)
         $new_roles[$id] = $name;
     }
   }
-  user_save($user, ['roles'=> $new_roles]);
+  user_save($user, ['roles' => $new_roles]);
   return 1;
-
 }

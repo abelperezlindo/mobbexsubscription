@@ -26,18 +26,18 @@ function subscriber_page_form($form, &$form_state)
     $roleActSub        = user_role_load_by_name('active_subscriptor');
     $userHasActRole    = user_has_role($roleActSub->rid, $user);
 
-    if (isset($sub) && ($idSubscription !== $sub->subscription_id)) {
-        // Hay una discrepancia con la subscripción seteada en la 
-        //configuracion del modulo y la suscripción a la cual 
-        //pertenece este usuario. Se debe manejar este error.
-        return;
-    }
-    if (empty($sub)) {
+
+    if (empty($sub) || is_array($sub)) {
         //El usuario nunca envio el formulario de suscripción.
         $form['Message'] = [
             '#markup' => 'No suscipto'
         ];
         return $form;
+    } elseif ($idSubscription !== $sub->subscription_id) {
+        // Hay una discrepancia con la subscripción seteada en la 
+        //configuracion del modulo y la suscripción a la cual 
+        //pertenece este usuario. Se debe manejar este error.
+        return;
     }
     $mbx = new Moxy($apikey, $token);
     $subData = $mbx->getSubscriber($sub->subscription_id, $sub->subscriber_id);

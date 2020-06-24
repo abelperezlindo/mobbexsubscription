@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Contiene formulario de configuraciones
@@ -9,18 +10,16 @@
  *
  */
 return 0;
- 
+
 function mobbexsubscription_config_form($form, &$form_state)
 {
-
     if (!function_exists('curl_version')) {
         drupal_set_message(t('CURL NO INSTALADO'), 'error');
     }
-    if(isset($form_state['config'])){
+    if (isset($form_state['config'])) {
         $config = $form_state['config'];
         $config['idsub'] = variable_get('mobbexsubscription_idsubs', 0);
-    }
-    else {
+    } else {
         $config = getDataConfig();
     }
 
@@ -101,9 +100,9 @@ function SaveConfig_validate($form, &$form_state)
     if (empty($form_state['values']['id_subscription'])) {
         form_set_error(
             'id_subscription',
-            t('Ingrese el ID de subscripcion'));
+            t('Ingrese el ID de subscripcion')
+        );
     }
-
 }
 /**
  * Validación para obtener listado de suscripciones
@@ -129,7 +128,6 @@ function getSubList_validate($form, &$form_state)
  */
 function getSubList_submit($form, &$form_state)
 {
-
     $apikey = $form_state['values']['api_key'];
     $token = $form_state['values']['access_token'];
 
@@ -140,7 +138,7 @@ function getSubList_submit($form, &$form_state)
     $form_state['rebuild'] = true;
     $form_state['config'] = [
         'apikey' => $apikey,
-        'token'  => $token,
+        'token' => $token,
     ];
 }
 
@@ -150,22 +148,19 @@ function getSubList_submit($form, &$form_state)
 function SaveConfig_submit($form, &$form_state)
 {
     $apikey = $form_state['values']['api_key'];
-    $token = $form_state['values']['access_token'];
+    $token  = $form_state['values']['access_token'];
     $subscription = $form_state['values']['id_subscription'];
 
     variable_set('mobbexsubscription_apikey', $apikey);
-    variable_set('mobbexsubscription_token' , $token);
+    variable_set('mobbexsubscription_token', $token);
     variable_set('mobbexsubscription_idsubs', $subscription);
 
-    $mbx = new Moxy($apikey, $token);
+    $mbx    = new Moxy($apikey, $token);
     $result = $mbx->getSubscriptions($subscription);
-    if (empty($result)) {
-        variable_set(
-            'mobbexsubscription_shorten_url',
-            0
-        );
-        drupal_set_message('No exixte la suscripcion seleccionada');
 
+    if (empty($result)) {
+
+        drupal_set_message('No exixte la suscripcion seleccionada');
     } elseif ($result['result'] && ($result['data']['uid'] == $subscription)) {
         variable_set(
             'mobbexsubscription_shorten_url',
@@ -178,8 +173,8 @@ function getDataConfig()
 {
     return [
         'apikey' => variable_get('mobbexsubscription_apikey', 0),
-        'token' => variable_get('mobbexsubscription_token', 0),
-        'idsub' => variable_get('mobbexsubscription_idsubs', 0),
+        'token'  => variable_get('mobbexsubscription_token', 0),
+        'idsub'  => variable_get('mobbexsubscription_idsubs', 0),
     ];
 }
 
@@ -192,14 +187,14 @@ function drawSubsList($result)
     $aux = 0;
     $tabla = [];
     foreach ($result['data']['docs'] as $valor) {
-
-        $tabla[$aux]['UID'] = $valor['uid'];
-        $tabla[$aux]['NAME'] = $valor['name'];
-        $tabla[$aux]['DESCRIPTION'] = $valor['description'];
+        $tabla[$aux]['UID']      = $valor['uid'];
+        $tabla[$aux]['NAME']     = $valor['name'];
+        $tabla[$aux]['DESC']     = $valor['description'];
         $tabla[$aux]['INTERVAL'] = $valor['interval'];
-        $tabla[$aux]['COUNT'] = $valor['count'];
-        $tabla[$aux]['TOTAL'] = $valor['currency'] . ' $' . $valor['total'];
-        $tabla[$aux]['URL'] = $valor['url'];
+        $tabla[$aux]['COUNT']    = $valor['count'];
+        $tabla[$aux]['TOTAL']    = $valor['currency'] . ' $' . $valor['total'];
+        $tabla[$aux]['URL']      = $valor['url'];
+
         $aux++;
     }
     $header = [
@@ -216,5 +211,5 @@ function drawSubsList($result)
         return 'NO SE ENCONTRARON DATOS';
     }
 
-    return theme('table', array('header' => $header, 'rows' => $tabla));
+    return theme('table', ['header' => $header, 'rows' => $tabla]);
 }

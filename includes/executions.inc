@@ -58,5 +58,5 @@ function markup_table_executions($filters = null){
         #['data'=>t('Operaciones'), 'colspan'=>1]
     ];
 
-    return theme('table', array('header' => $header, 'rows' => $content));
+    return theme('table',['header' => $header, 'rows' => $content]);
 }
