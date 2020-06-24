@@ -71,13 +71,17 @@ function mobbexsubscription_entry_update($entry)
  * @return mixed
  *     respuesta o cero.
  */
-function mobbexsubscription_entry_get($uid)
+function mobbexsubscription_entry_get($uid = 0)
 {
-    $result = db_select('mobbexsubscription', 'mbx')
-        ->fields('mbx')
-        ->condition('uid', $uid, '=')
-        ->execute()
-        ->fetchAll();
+    $result = db_select('mobbexsubscription', 'mbx');
+    $result->fields('mbx');
+
+    if (!empty($uid))
+        $result->condition('uid', $uid, '=');
+
+    $result->execute();
+    $result->fetchAll();
+
     if (empty($result)) return 0;
     if (count($result) == 1) return $result[0];
     return $result;
