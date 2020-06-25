@@ -13,6 +13,9 @@
  */
 function mobbexsubscription_entry_insert($entry)
 {
+    $isSub =  mobbexsubscription_entry_get($entry['uid']);
+    if (!empty($isSub)) return 0;
+
     $return_value = NULL;
     $transaction = db_transaction();
     try {
@@ -111,8 +114,7 @@ function mobbexsubscription_entry_getall()
 */
 function mobbexexecution_entry_insert($entry)
 {
-    $isSub =  mobbexsubscription_entry_get($entry['uid']);
-    if (!empty($isSub)) return 0;
+
     $return_value = NULL;
     $transaction = db_transaction();
     try {
