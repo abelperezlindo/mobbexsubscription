@@ -114,8 +114,8 @@ function webhook_form($form, &$form_state)
     if ($type == 'subscription:execution') {
         // Si la suscripcion es Dinamica se realizaran las ejecuciones automaticamente 
         // según la agenda.
-        watchdog('mobbexsubscription', 'New execution', [], WATCHDOG_DEBUG);
-        if ($data['result'] != "true") return;
+        watchdog('mobbexsubscription', 'New execution <pre>' . print_r($data, TRUE) . '</pre>', [], WATCHDOG_DEBUG);
+        if (empty($data['result']) || $data['result'] == false) return;
         //"reference" y "id_drupal" guardan el id de usuario en nuestro aplicativo
         if (isset($data['subscriber']['customer']['id_drupal'])) {
             $uidFromMobbex = $data['subscriber']['customer']['id_drupal'];
@@ -132,7 +132,7 @@ function webhook_form($form, &$form_state)
         $estado = $data['payment']['status']['code'];
         if ($estado == "200") {
             //Estado 200 = Paga, mensage "aprobada"
-            $entry = mobbexsubscription_entry_get($user->uid);
+            $entry = mobbexsubscription_entry_get($uidFromMobbex);
             if (empty($entry)) return;
             // si no lo tenemos en la tabla de las suscripciones
             // el usuario no se registro desde nuesta applic
@@ -161,6 +161,7 @@ function webhook_form($form, &$form_state)
             'datetime'       => date("Y-m-d H:i:s", strtotime($data['payment']['created'])),
             'reference'      => $data['payment']['reference'],
         ];
+        watchdog('mobbexsubscription', 'New execution' . print_r($fields, TRUE), [], WATCHDOG_DEBUG);
         mobbexexecution_entry_insert($fields);
         return;
     }
