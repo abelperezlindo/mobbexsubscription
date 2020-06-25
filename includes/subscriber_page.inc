@@ -12,8 +12,6 @@
 
 function subscriber_page_form($form, &$form_state)
 {
-    $dbg = mobbexsubscription_entry_getall();
-    drupal_set_message('<pre>' . print_r($dbg, TRUE) . '</pre>');
 
     //status=200&sid=8N_JHkTvV
     if (isset($_GET["status"]) && isset($_GET["sid"])) {
