@@ -77,6 +77,17 @@ function mobbexsubscription_config_form($form, &$form_state)
         '#validate' => ['SaveConfig_validate'],
         '#submit' => ['SaveConfig_submit'],
     );
+    $form['clear'] = [
+        '#type' => 'fieldset',
+        '#title' => t('Limpiar todo (solo dev)')
+    ];
+    $form['clear']['clearAll'] = [
+        '#type' => 'submit',
+        '#name' => 'claerAllConfig',
+        '#value' => t('Limpriar las configuraciones, incluso las tablas'),
+        '#validate' => ['claerAllConfig_validate'],
+        '#submit' => ['claerAllConfig_submit'],
+    ];
     return $form;
 }
 /**
@@ -212,4 +223,19 @@ function drawSubsList($result)
     }
 
     return theme('table', ['header' => $header, 'rows' => $tabla]);
+}
+
+function claerAllConfig_validate($form, &$form_state)
+{
+}
+function claerAllConfig_submit($form, &$form_state)
+{
+    variable_set('mobbexsubscription_apikey', 0);
+    variable_set('mobbexsubscription_token', 0);
+    variable_set('mobbexsubscription_idsubs', 0);
+    $num_deleted = db_delete('mobbexsubscription')
+        ->execute();
+    $num_deleted = db_delete('mobbexexecution')
+        ->execute();
+    return;
 }
