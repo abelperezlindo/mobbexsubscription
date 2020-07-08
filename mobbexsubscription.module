@@ -242,14 +242,14 @@ function createNewSuscriptor_submit($form,  &$form_state)
       'identification'   => $form_state['values']['dni'],
       'email'            => $form_state['values']['correo'],
       'name'             => $form_state['values']['nombre'],
-      'id_drupal' => $uid
+      'id_drupal' => $uid //se permiten campos customs para customer
     ],
-    'test'      => 'true',
-    'startDate' => [
+    'test'      => 'true', //important!! para poder usar tarjetas de prueba
+    'startDate' => [  //la suscripcion empieza hoy mismo
       'day' => date('j'),
       'month' => date('n'),
     ],
-    'reference' => str_pad(strval($uid), 8, '0', STR_PAD_LEFT), //el uid de drupal completado con ceros
+    'reference' => str_pad(strval($uid), 8, '0', STR_PAD_LEFT), //el uid de drupal completado con ceros a la izq
   ];
 
   $mbx = new Moxy($apikey, $token);
@@ -262,8 +262,9 @@ function createNewSuscriptor_submit($form,  &$form_state)
       'status'         => 0,
     ];
     mobbexsubscription_entry_insert($fields);
+    //Redireccionamos al usuario a mobbex para que ingrese un medio de pago
+    drupal_goto($response['data']['sourceUrl']);
   }
-  drupal_goto('mi-suscripcion');
 }
 
 /**

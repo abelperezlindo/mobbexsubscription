@@ -32,13 +32,13 @@ function mobbexsubscription_config_form($form, &$form_state)
         '#type' => 'textfield',
         '#title' => t('Clave API'),
         '#description' => t('Ingrese la Clave API de su aplicación'),
-        '#default_value' => $config['apikey'],
+        '#default_value' => ($config['apikey']) ? $config['apikey'] : 'zJ8LFTBX6Ba8D611e9io13fDZAwj0QmKO1Hn1yIj',
     ];
     $form['access_config']['access_token'] = [
         '#type' => 'textfield',
         '#title' => t('Token de Acceso '),
         '#description' => t('Ingrese el Token de Acceso a la entidad para la cual desea realizar las operaciónes.'),
-        '#default_value' => $config['token'],
+        '#default_value' => ($config['token']) ? $config['token'] : 'd31f0721-2f85-44e7-bcc6-15e19d1a53cc',
     ];
     $form['subscription_config'] = [
         '#type' => 'fieldset',
@@ -140,7 +140,7 @@ function getSubList_validate($form, &$form_state)
 function getSubList_submit($form, &$form_state)
 {
     $apikey = $form_state['values']['api_key'];
-    $token = $form_state['values']['access_token'];
+    $token  = $form_state['values']['access_token'];
 
     $mbx = new Moxy($apikey, $token);
 
@@ -180,6 +180,7 @@ function SaveConfig_submit($form, &$form_state)
         drupal_set_message('Ok, la url de suscripcion es ' . $result['data']['shorten_url']);
     }
 }
+
 function getDataConfig()
 {
     return [
