@@ -9,7 +9,7 @@
  *    Formulario para alta para configuraciones de la subscripción
  *
  */
-return 0;
+
 
 function mobbexsubscription_config_form($form, &$form_state)
 {
@@ -88,6 +88,8 @@ function mobbexsubscription_config_form($form, &$form_state)
         '#validate' => ['claerAllConfig_validate'],
         '#submit' => ['claerAllConfig_submit'],
     ];
+
+
     return $form;
 }
 /**

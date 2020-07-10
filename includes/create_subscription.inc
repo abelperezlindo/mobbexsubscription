@@ -87,7 +87,7 @@ function create_subscription_form($form, &$form_state)
         '#title'         => t('Url de returno'),
         '#description'   => t('URL a la que se enviará al usuario una vez suscripto. Debe ser HTTPs.'),
         '#required'      => TRUE,
-        '#default_value' => $base_url . '/mi-suscripcion',
+        '#default_value' => $base_url . '/user',
     ];
     $form['confirm'] = [
         '#type'          => 'submit',

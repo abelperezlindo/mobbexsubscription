@@ -12,7 +12,6 @@ require_once __DIR__ . '/includes/data_access.inc';
 // Archivos incluidos
 module_load_include('inc', 'mobbexsubscription', 'includes/set_config.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/webhook.inc');
-module_load_include('inc', 'mobbexsubscription', 'includes/subscriber_page.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/create_subscription.inc');
 module_load_include('inc', 'mobbexsubscription', 'includes/executions.inc');
 
@@ -38,10 +37,7 @@ function mobbexsubscription_permission()
       'title' => t('Mobbex Subscription - Configuracion'),
       'description' => t('Permisos para acceder a configuraciones de Mobbex Subscription .'),
     ),
-    'acceso_mi_suscripcion_mobbexsubscription' =>  array(
-      'title' => t('Mobbex Subscription - Mi Suscripción'),
-      'description' => t('Permisos para acceder a Mi Suscripción .'),
-    ),
+
     'acceso_create_subscription_mobbexsubscription' =>  array(
       'title' => t('Mobbex Subscription - Crear Suscripción'),
       'description' => t('Permisos para acceder a Crear Suscripción .'),
@@ -97,14 +93,7 @@ function mobbexsubscription_menu()
     'file' => 'includes/create_subscription.inc',
     'expanded' => TRUE,
   ];
-  $items['mi-suscripcion'] = [
-    'title' => 'Mi Suscripción',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('subscriber_page_form'),
-    'access arguments' => array('acceso_mi_suscripcion_mobbexsubscription'),
-    'file' => 'includes/subscriber_page.inc',
-    'expanded' => TRUE,
-  ];
+
   $items['admin/config/mobbexsubscription/ejecuciones'] = [
     'title' => 'Ejecuciones',
     'page callback' => 'drupal_get_form',
@@ -142,6 +131,15 @@ function mobbexsubscription_block_info()
     'cache' => DRUPAL_CACHE_PER_ROLE,
   ];
 
+  $blocks['mi_suscripcion'] = [
+    // info: The name of the block.
+    'info' => t('Mobbex Subscription: Info sobre mi suscripción'),
+    'status' => 1,
+    'region' => 'content',
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' => 'user/*',
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  ];
   return $blocks;
 }
 
@@ -161,27 +159,14 @@ function mobbexsubscription_block_view($delta = '')
         $block['content'] = drupal_get_form('createNewSuscriptor_form');
       }
       break;
+    case 'mi_suscripcion':
+      $block['subject'] = '';
+      $block['content'] = drupal_get_form('subscriber_info_form');
+      break;
   }
   return $block;
 }
 
-/**
- * A module-defined block content function.
- */
-function mobbexsubscription_contents($which_block)
-{
-  switch ($which_block) {
-    case 'boton_de_suscripcion':
-      $link = l(
-        'Mi Suscripción',
-        'mi-suscripcion'
-      );
-      $result = [
-        '#markup' => $link,
-      ];
-      return $result;
-  }
-}
 /**
  * Implements hook_form().
  *    Formulario auxiliar para la prueba de la suscripcion de un usuario
@@ -293,4 +278,144 @@ function activeSubscriptionRole($uid, $state)
   }
   user_save($user, ['roles' => $new_roles]);
   return 1;
+}
+
+
+/**
+ * @file 
+ * Info suscripción por usuario
+ * 
+ * Implements hook_form()
+ * 
+ *      Informacion de suscripción por usuarios
+ * 
+ */
+
+function subscriber_info_form($form, &$form_state)
+{
+  if (isset($_GET["status"]) && isset($_GET["sid"])) {
+    //Recibir estos parametros significa que mobbex nos redireccionó.
+    // Si status es 200 el usuario ingresó correctamente un medio de pago.
+    $welcome = $_GET["sid"];
+  }
+  $apikey            = variable_get('mobbexsubscription_apikey', 0);
+  $token             = variable_get('mobbexsubscription_token', 0);
+  if (empty($apikey) || empty($token)) {
+    $errMessage = t('El modulo de suscripciones no fue configurado.');
+    watchdog('mobbexsubscription', $errMessage, [], WATCHDOG_ALERT);
+    return;
+  }
+  $idSubscription    = variable_get('mobbexsubscription_idsubs', 0);
+  $user              = $GLOBALS['user'];
+  $sub               = mobbexsubscription_entry_get($user->uid);
+  $roleActSub        = user_role_load_by_name('active_subscriptor');
+  $userHasActRole    = user_has_role($roleActSub->rid, $user);
+
+
+  if (empty($sub) || is_array($sub)) {
+    //El usuario nunca envio el formulario de suscripción.
+    $sitename = variable_get('site_name', 'este sitio');
+    $form['Message'] = [
+      '#markup' => t('Usted no esta suscipto a :site, puede suscribirse completando el siguiente formulario, y así obtener todos los beneficios de un usuario premium.', [':site' => $sitename])
+    ];
+
+    //Incluimos el formulario de suscripción dentro de este formulario
+    $form['subform'] = drupal_get_form('createNewSuscriptor_form');
+
+    return $form;
+  } elseif ($idSubscription !== $sub->subscription_id) {
+
+    $errMessage =  'Hay una discrepancia con la subscripción seteada en la 
+      configuracion del modulo (:idSubConf) y la suscripción a la cual 
+      pertenece este usuario (:idSubUser).';
+
+    watchdog(
+      'mobbexsubscription',
+      $errMessage,
+      [':idSubConf' => $idSubscription, ':idSubUser' =>  $sub->subscription_id],
+      WATCHDOG_ALERT
+    );
+    return;
+  }
+
+  $mbx = new Moxy($apikey, $token);
+  $subData = $mbx->getSubscriber($sub->subscription_id, $sub->subscriber_id);
+
+  if (!$userHasActRole) {
+    //el usuario realizo la suscripcion pero no tiene un medio de pago activo.
+    $link = l(
+      'aquí',
+      $subData['data']['url']
+    );
+    $form['Message'] = [
+      '#markup' => 'Debe agregar un medio de pago en ' . $link . ', Su suscripción será activada cuando se ingrese un medio de pago valido.'
+    ];
+    return $form;
+  }
+
+
+  $form['subscription'] = [
+    '#type' => 'fieldset',
+    '#title' => t('Suscripción'),
+    '#description' => t('Informacion sobre la suscripción a la que estas aderido.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  ];
+  $form['subscriber'] = [
+    '#type' => 'fieldset',
+    '#title' => t('Mis datos'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  ];
+
+  $preRender = [];
+  $preRender['Nombre'] = $subData['data']['subscription']['name'];
+  $preRender['Descripción'] = $subData['data']['subscription']['description'];
+  $preRender['Monto'] = $subData['data']['subscription']['currency'] . ' ' . $subData['data']['subscription']['total'];
+  $preRender['Intervalo de Cobro'] = $subData['data']['subscription']['interval'];
+
+  $form['subscription']['text'] = [
+    '#markup' => renderAsList($preRender),
+  ];
+
+  unset($preRender);
+  $preRender['Mi Cuenta'] = l('Gestionar', $subData['data']['url']);
+  if (empty($subData['data']['subscriber']['activeSource'])) {
+    $preRender['Mi medio de pago'] = 'Aún no ingresó un medio de pago. ' . l('Ingresar', $subData['data']['url'] . '/source');
+  } else {
+    $preRender['Mi medio de pago'] = $subData['data']['subscriber']['activeSource']['name'] . l('Cambiar', $subData['data']['url'] . '/source');
+  }
+  $preRender['Mi número de referencia'] = $subData['data']['subscriber']['reference'];
+  $preRender['Mi nombre'] = $subData['data']['subscriber']['customerData']['name'];
+  $preRender['Mi identification'] = 'DNI ' . $subData['data']['subscriber']['customerData']['identification'];
+  $preRender['Mi email'] = $subData['data']['subscriber']['customerData']['email'];
+  $execution = $subData['data']['subscriber']['executions'][0];
+  if ($execution['status'] ==  'pending') {
+
+    drupal_set_message($subData['data']['subscriber']['executions'][0]['status']);
+    $execution = $subData['data']['subscriber']['executions'][0];
+
+    $preRender['Pagos pendientes'] = 'Periodo ' . $execution['period'];
+    $preRender['Pagos pendientes'] .= ' pendiente de pago, desde ' . $execution['day'];
+    $preRender['Pagos pendientes'] .= '/' . $execution['month'];
+    $preRender['Pagos pendientes'] .= '/' . $execution['year'];
+
+    //' pendiente de pago, desde ' . $execution['day'] . '/' . $execution['month']  . '/' . $execution['year'];
+  }
+
+  $form['subscriber']['text'] = [
+    '#markup' => renderAsList($preRender),
+  ];
+
+  return $form;
+}
+
+
+function renderAsList($arr)
+{
+  $render = '<div>';
+  foreach ($arr as $key => &$val) {
+    $render .= '<p><strong>' . $key . ':</strong> ' . $val . '</p>';
+  }
+  return $render . '</div>';
 }
