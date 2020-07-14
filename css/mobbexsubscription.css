@@ -1,0 +1,8 @@
+.user-picture-custom {
+    display: inline-block;
+}
+.user-picture-custom .img-responsive{
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+}

@@ -203,7 +203,7 @@ function drawSubsList($result)
     foreach ($result['data']['docs'] as $valor) {
         $tabla[$aux]['UID']      = $valor['uid'];
         $tabla[$aux]['NAME']     = $valor['name'];
-        $tabla[$aux]['DESC']     = $valor['description'];
+        $tabla[$aux]['DESC']     = (isset($valor['description'])) ? $valor['description'] : 'Sin Desc.';
         $tabla[$aux]['INTERVAL'] = $valor['interval'];
         $tabla[$aux]['COUNT']    = $valor['count'];
         $tabla[$aux]['TOTAL']    = $valor['currency'] . ' $' . $valor['total'];

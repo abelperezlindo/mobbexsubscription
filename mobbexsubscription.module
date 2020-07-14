@@ -31,7 +31,7 @@ function mobbexsubscription_permission()
   return [
     'active_subscriptor' =>  array(
       'title' => t('Mobbex Subscription - Rol para usuario con suscripció activa'),
-      'description' => t('Permisos para acciones de suscriptores.'),
+      'description' => t('Permisos para acciones de suscriptores .'),
     ),
     'acceso_configurar_mobbexsubscription' =>  array(
       'title' => t('Mobbex Subscription - Configuracion'),
@@ -51,6 +51,11 @@ function mobbexsubscription_permission()
     'acceso_executions_mobbexsubscription' =>  array(
       'title' => t('Mobbex Subscription - Ejecuciones'),
       'description' => t('Permisos para acceder a Ejecuciones .'),
+    ),
+
+    'acceso_suscribirme_mobbexsubscription' =>  array(
+      'title' => t('Mobbex Subscription - Acceso a formulario Suscribirme'),
+      'description' => t('Permisos para acceder  a formulario Suscribirme .'),
     )
   ];
 }
@@ -109,6 +114,13 @@ function mobbexsubscription_menu()
     'access arguments' => array('acceso_webhook_mobbexsubscription'),
     'expanded' => TRUE,
   ];
+  $items['suscribirme'] = [
+    'title' => t('Suscribirme'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('createNewSuscriptor_form'),
+    'access arguments' => array('acceso_suscribirme_mobbexsubscription'),
+    'expanded' => TRUE,
+  ];
 
   $items['admin/config/mobbexsubscription'] = [
     'title'            => 'Mobbex Subscriptions',
@@ -126,8 +138,11 @@ function mobbexsubscription_block_info()
 {
 
   $blocks['boton_de_suscripcion'] = [
-    // info: The name of the block.
-    'info' => t('Mobbex Subscription: Botón Suscribirme'),
+    // este bloque tiene diferentes formas de verse segun los roles de usuario
+    // Si el usuario es anonimo ve los botones [Suscribirse] [Iniciar]
+    // si esta logueado pero no es susciptor   [Suscribirse] [Salir]
+    // si es suscriptor dolo [salir]
+    'info' => t('Mobbex Subscription: Botón Suscribirme con botón de Iniciar'),
     'cache' => DRUPAL_CACHE_PER_ROLE,
   ];
 
@@ -153,12 +168,91 @@ function mobbexsubscription_block_view($delta = '')
   // The $delta parameter tells us which block is being requested.
   switch ($delta) {
     case 'boton_de_suscripcion':
-      $block['subject'] = t('Suscribirse');
+      $block['subject'] = t('');
       $user = $GLOBALS['user'];
-      if (!array_search('active_subscriptor', $user->roles)) {
-        $block['content'] = drupal_get_form('createNewSuscriptor_form');
+      if (!empty($user->picture)) {
+        $file =  file_load($user->picture);
+        //$picture = image_style_url("thumbnail", $file->uri);
+        $picture = theme('image_style', ['style_name' => 'thumbnail', 'path' => $file->uri, 'width' => '20']);
       }
+
+      $render = [];
+      $render[] = '<div class="navbar-right analisis-user-nav">';
+
+      //tres casos posibles
+      if (array_search('anonymous user', $user->roles)) {
+        $render[] = l(
+          'suscribirse',
+          'user/login',
+          [
+            'attributes' => [
+              'class' => ['btn-suscribirme', 'btn', 'btn-success'],
+              'html' => TRUE,
+              'style' => 'margin: 5px;'
+            ],
+            'query' => ['from' => 'subscribe']
+          ]
+        );
+        $render[] = l(
+          'Iniciar',
+          'user/login',
+          [
+            'attributes' => [
+              'class' => ['btn-login', 'btn', 'btn-default'],
+              'html' => TRUE,
+              'style' => 'margin: 5px;'
+            ]
+          ]
+        );
+      }
+      if (array_search('authenticated user', $user->roles) && !array_search('active_subscriptor', $user->roles)) {
+        $render[] = '<div class="dropdown">';
+        $render[] = '<button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">';
+        if (!empty($user->picture)) {
+          $render[] =  '<div class="user-picture-custom">' . $picture . '</div>';
+        }
+        $render[] =  '<div style="vertical-align:middle; display:inline;">' . $user->name . '</div>';
+
+        $render[] = '<span class="caret"></span>';
+        $render[] = '</button>';
+        $render[] = '<ul class="dropdown-menu" aria-labelledby="dropdownMenu1">';
+        $render[] = '<li><a href="suscribirme">SUSCRIBIRME</a></li>';
+        $render[] = '<li><a href="user">MI CUENTA</a></li>';
+        $render[] = '<li><a href="#">AYUDA</a></li>';
+        $render[] = '<li><a href="#">TERMINOS Y CONDICIONES</a></li>';
+        $render[] = '<li><a href="user/logout">SALIR</a></li>';
+        $render[] = '</ul></div>';
+      }
+
+      if (array_search('active_subscriptor', $user->roles)) {
+
+        $render[] = '<div class="dropdown">';
+        $render[] = '<button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">';
+        if (!empty($user->picture)) {
+          $render[] =  '<div class="user-picture-custom">' . $picture . '</div>';
+        }
+
+        $render[] =  '<div style="vertical-align:middle; display:inline;">' . $user->name . '</div>';
+        $render[] = '<span class="caret"></span>';
+        $render[] = '</button>';
+        $render[] = '<ul class="dropdown-menu" aria-labelledby="dropdownMenu1">';
+        $render[] = '<li><a href="user/' . $user->uid . '/#edit-subscription">SUSCRIPCIÓN</a></li>';
+        $render[] = '<li><a href="user">MI CUENTA</a></li>';
+        $render[] = '<li><a href="#">AYUDA</a></li>';
+        $render[] = '<li><a href="#">TERMINOS Y CONDICIONES</a></li>';
+        $render[] = '<li><a href="user/logout">SALIR</a></li>';
+        $render[] = '</ul></div>';
+      }
+
+      $render[] = '</div>';
+      $block['content']['#markup'] = implode($render);
+      $block['content']['#attached']['css'] = [
+        drupal_get_path('module', 'mobbexsubscription') . '/css/mobbexsubscription.css',
+      ];
+
+
       break;
+
     case 'mi_suscripcion':
       $block['subject'] = '';
       $block['content'] = drupal_get_form('subscriber_info_form');
@@ -195,7 +289,7 @@ function createNewSuscriptor_form($form,  &$form_state)
   $form['confirm'] = [
     '#type'     => 'submit',
     '#name'     => 'confirmNewSubscription',
-    '#value'    => t('Confirmar'),
+    '#value'    => t('Suscribirme'),
     '#validate' => ['createNewSuscriptor_validate'],
     '#submit'   => ['createNewSuscriptor_submit'],
   ];
@@ -392,7 +486,7 @@ function subscriber_info_form($form, &$form_state)
   $execution = $subData['data']['subscriber']['executions'][0];
   if ($execution['status'] ==  'pending') {
 
-    drupal_set_message($subData['data']['subscriber']['executions'][0]['status']);
+    //drupal_set_message($subData['data']['subscriber']['executions'][0]['status']);
     $execution = $subData['data']['subscriber']['executions'][0];
 
     $preRender['Pagos pendientes'] = 'Periodo ' . $execution['period'];
@@ -410,7 +504,11 @@ function subscriber_info_form($form, &$form_state)
   return $form;
 }
 
-
+/** 
+ * Genera html
+ * @param mixed $arr 
+ *    Array clave valor para formar una lista html
+ */
 function renderAsList($arr)
 {
   $render = '<div>';
@@ -418,4 +516,36 @@ function renderAsList($arr)
     $render .= '<p><strong>' . $key . ':</strong> ' . $val . '</p>';
   }
   return $render . '</div>';
+}
+
+
+/**
+ * Implements hook_user_login().
+ * 
+ * Se usa para redireccionar usuario luego del login.
+ */
+function mobbexsubscription_user_login(&$edit, $account)
+{
+  // No vamos a redireccionar si es un cambio de contraseña
+  $current_menu_item = menu_get_item();
+  if ($current_menu_item['path'] == 'user/reset/%/%/%') {
+    return;
+  }
+
+  // Si el usuario se logueo desde el registro, lo redireccionamos a /suscribirme, siempre.
+  if ($current_menu_item['path'] == 'user/register') {
+    $_GET['destination'] = 'suscribirme';
+    return;
+  }
+
+  // seteamos la redireccion a /user como caso normal
+  $_GET['destination'] = 'user';
+  // buscamos si tiene la url tiene un parametro 'from'
+  $from = (isset($_GET['from'])) ? $_GET['from'] : FALSE;
+
+  // Si llegamos desde el link "suscribirme" redireccionamos a /suscribirme
+  // si el usuario logueado ya tiene el rol 'active_subscriptor' se va a /user
+  if (($from === 'suscribe') && (!array_search('active_subscriptor', $account->roles))) {
+    $_GET['destination'] = 'suscribirme';
+  }
 }
